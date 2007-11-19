@@ -64,6 +64,7 @@ static qbool MVD_Parser_DemoRead(mvd_info_t *mvd, void *dest, unsigned int need,
 static qbool MVD_Parser_ReadFrame(mvd_info_t *mvd)
 {
 	int i;
+	static int mvd_frame_count = 0;
 	byte mvd_time;
 	byte message_type;
 	byte c;
@@ -73,23 +74,35 @@ static qbool MVD_Parser_ReadFrame(mvd_info_t *mvd)
 	while (true)
 	{
 		// Read MVD time.
-		MVD_Parser_DemoRead(mvd, &mvd_time, 1, false);
+		if (!MVD_Parser_DemoRead(mvd, &mvd_time, 1, false))
+		{
+			Sys_PrintError("MVD_Parser_ReadFrame: Failed to read demo time\n");
+			return false;
+		}
+
+		Sys_PrintDebug(5, "MVD_Parser_ReadFrame: Read MVD Frame %i\n", mvd->frame_count++);
 
 		mvd->demotime += (mvd_time * 0.001f);
 
 		// Get the msg type.
-		MVD_Parser_DemoRead(mvd, &c, 1, false);
-		message_type = (c & 7);
+		if (!MVD_Parser_DemoRead(mvd, &c, 1, false))
+		{
+			Sys_PrintError("MVD_Parser_ReadFrame: Failed to read command type\n");
+			return false;
+		}
+
+		message_type = (c & 7); // We only care about the first 3 bits.
 
 		// QWD Only.
 		if (message_type == dem_cmd)
 		{
-			// TODO : Fail! This should only appear in QWDs
-			continue;
+			// Fail! This should only appear in QWDs
+			Sys_PrintError("MVD_Parser_ReadFrame: Encountered a dem_cmd command, this should only occur in QWDs\n");
+			return false;
 		}
 
 		// MVD Only. These message types tells to which players the message is directed to.
-		if (message_type >= dem_multiple && message_type <= dem_all)
+		if ((message_type >= dem_multiple) && (message_type <= dem_all))
 		{
 			switch (message_type)
 			{
@@ -100,7 +113,12 @@ static qbool MVD_Parser_ReadFrame(mvd_info_t *mvd)
 				{
 					// Read the player bit mask from the demo and convert to the correct byte order.
 					// Each bit in this number represents a player, 32-bits, 32 players.
-					MVD_Parser_DemoRead(mvd, &i, sizeof(i), false);
+					if (!MVD_Parser_DemoRead(mvd, &i, sizeof(i), false))
+					{
+						Sys_PrintError("MVD_Parser_ReadFrame: Failed to read dem_multiple player bitmask\n");
+						return false;
+					}
+
 					mvd->lastto = LittleLong(i);
 					mvd->lasttype = dem_multiple;
 					break;
@@ -145,13 +163,18 @@ static qbool MVD_Parser_ReadFrame(mvd_info_t *mvd)
 		{
 			// Read the size of next net message in the demo file
 			// and convert it into the correct byte order.
-			MVD_Parser_DemoRead(mvd, &net_message.cursize, 4, false);
+			if (!MVD_Parser_DemoRead(mvd, &net_message.cursize, 4, false))
+			{
+				Sys_PrintError("MVD_Parser_ReadFrame: Failed to read current net_message size in dem_read\n");
+				return false;
+			}
+
 			net_message.cursize = LittleLong(net_message.cursize);
 
 			// The message was too big, stop playback.
 			if (net_message.cursize > net_message.maxsize)
 			{
-				Sys_PrintError("MVD_Parser_ReadFrame: net_message.cursize > net_message.maxsize");
+				Sys_PrintError("MVD_Parser_ReadFrame: net_message.cursize > net_message.maxsize\n");
 				return false;
 			}
 
@@ -160,7 +183,7 @@ static qbool MVD_Parser_ReadFrame(mvd_info_t *mvd)
 
 			if (!MVD_Parser_DemoRead(mvd, net_message.data, net_message.cursize, false))
 			{
-				Sys_PrintError("MVD_Parser_ReadFrame: Failed to read net message data.\n");
+				Sys_PrintError("MVD_Parser_ReadFrame: Failed to read net message data of size %i.\n", net_message.cursize);
 				return false;
 			}
 
@@ -184,10 +207,22 @@ static qbool MVD_Parser_ReadFrame(mvd_info_t *mvd)
 		// Gets the sequence numbers for the netchan at the start of the demo.
 		if (message_type == dem_set)
 		{
-			MVD_Parser_DemoRead(mvd, &i, sizeof(i), false);
+			// Read outgoing sequence.
+			if (!MVD_Parser_DemoRead(mvd, &i, sizeof(i), false))
+			{
+				Sys_PrintError("MVD_Parser_ReadFrame: Failed to read outgoing sequence number in dem_set.\n");
+				return false;
+			}
+
 			outgoing_sequence = LittleLong(i);
 
-			MVD_Parser_DemoRead(mvd, &i, sizeof(i), false);
+			// Read incoming sequence.
+			if (!MVD_Parser_DemoRead(mvd, &i, sizeof(i), false))
+			{
+				Sys_PrintError("MVD_Parser_ReadFrame: Failed to read incoming sequence number in dem_set.\n");
+				return false;
+			}
+
 			incoming_sequence = LittleLong(i);
 
 			continue;
@@ -233,7 +268,7 @@ qbool MVD_Parser_StartParse(byte *mvdbuf, long filelen)
 		{
 			Q_free(net_message.data);
 
-			Sys_PrintError("Failed to parse MVD frame.\n");
+			Sys_PrintError("MVD_Parser_StartParse: Failed to parse MVD frame.\n");
 			return false;
 		}
 
@@ -243,7 +278,7 @@ qbool MVD_Parser_StartParse(byte *mvdbuf, long filelen)
 			// Parse the server message.
 			if (!NetMsg_Parser_StartParse(&mvd))
 			{
-				Sys_PrintError("Failed to parse server message.\n");
+				Sys_PrintError("MVD_Parser_StartParse: Failed to parse server message.\n");
 				return false;
 			}
 
