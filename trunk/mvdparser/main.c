@@ -140,6 +140,7 @@ int main(int argc, char **argv)
 		else
 		{
 			// Parse the demo.
+			Sys_Print("Starting to parse %s\n", cmdargs.mvd_files[i]);
 			MVD_Parser_StartParse(mvd_data, mvd_len);
 		}
 

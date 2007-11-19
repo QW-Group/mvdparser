@@ -22,43 +22,7 @@
 #define STAT_VIEWHEIGHT		16		// Z_EXT_VIEWHEIGHT protocol extension
 #define STAT_TIME			17		// Z_EXT_TIME extension
 
-char *stat_string[] = 
-{
-        "STAT_HEALTH",
-        "STAT_FRAGS",
-        "STAT_WEAPON",
-        "STAT_AMMO",
-        "STAT_ARMOR",
-        "STAT_WEAPONFRAME",
-        "STAT_SHELLS",
-        "STAT_NAILS",
-        "STAT_ROCKETS",
-        "STAT_CELLS",
-        "STAT_ACTIVEWEAPON",
-        "STAT_TOTALSECRETS",
-        "STAT_TOTALMONSTERS",
-        "STAT_SECRETS",
-        "STAT_MONSTERS",
-        "STAT_ITEMS",
-        "STAT_VIEWHEIGHT",
-        "STAT_TIME",
-        "STAT_18",
-        "STAT_19",
-        "STAT_20",
-        "STAT_21",
-        "STAT_22",
-        "STAT_23",
-        "STAT_24",
-        "STAT_25",
-        "STAT_26",
-        "STAT_27",
-        "STAT_28",
-        "STAT_29",
-        "STAT_30",
-        "STAT_31",
-        "STAT_32"
-
-};
+extern char *stat_string[];
 
 // Item flags.
 #define	IT_SHOTGUN			1

@@ -15,7 +15,7 @@ typedef enum {false, true} qbool;
 
 typedef struct cmdline_params_s
 {
-	qbool debug;
+	int debug;
 	char **mvd_files;
 	int mvd_files_count;
 } cmdline_params_t;
@@ -45,6 +45,8 @@ char *Q_strdup (const char *src);
 void Sys_InitDoubleTime (void);
 double Sys_DoubleTime (void);
 
+void Sys_Print(char *format, ...);
+void Sys_PrintDebug(int debuglevel, char *format, ...);
 void Sys_PrintError(char *format, ...);
 #define Sys_Error(format, ...) {Sys_PrintError(format, ##__VA_ARGS__); exit(1);}
 

@@ -65,6 +65,8 @@
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
 				SubSystem="1"
+				StackReserveSize="500000000"
+				StackCommitSize="500000000"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -193,6 +195,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\netmsg_parser.c"
+				>
+			</File>
+			<File
 				RelativePath=".\qw_protocol.c"
 				>
 			</File>
@@ -224,6 +230,10 @@
 			</File>
 			<File
 				RelativePath=".\net_msg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\netmsg_parser.h"
 				>
 			</File>
 			<File

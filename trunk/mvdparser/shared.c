@@ -60,6 +60,36 @@ void Sys_PrintError(char *format, ...)
 	vsnprintf(string, sizeof(string), format, argptr);
 	va_end(argptr);
 
-	fprintf(stderr, string, argptr);
+	printf(string, argptr);
+}
+
+void Sys_Print(char *format, ...)
+{
+	va_list argptr;
+	char string[1024];
+
+	va_start(argptr, format);
+	vsnprintf(string, sizeof(string), format, argptr);
+	va_end(argptr);
+
+	//fprintf(stdout, string, argptr);
+	printf(string, argptr);
+}
+
+void Sys_PrintDebug(int debuglevel, char *format, ...)
+{
+	va_list argptr;
+	char string[1024];
+
+	if (cmdargs.debug >= debuglevel)
+	{
+		return;
+	}
+
+	va_start(argptr, format);
+	vsnprintf(string, sizeof(string), format, argptr);
+	va_end(argptr);
+
+	printf(string, argptr);
 }
 

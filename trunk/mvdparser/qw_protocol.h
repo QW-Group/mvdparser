@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include "stats.h"
+
 #define	PROTOCOL_VERSION	28
 
 //=========================================
@@ -201,7 +203,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DF_WEAPONFRAME	(1 << 10)
 #define DF_MODEL		(1 << 11)
 
-
 //==============================================
 
 // the first 16 bits of a packetentities update holds 9 bits of entity number and 7 bits of flags
@@ -319,19 +320,136 @@ typedef struct packet_entities_s
 
 typedef struct packet_entities_s 
 {
-	int		num_entities;
+	int				num_entities;
 	entity_state_t	entities[MAX_MVD_PACKET_ENTITIES];
 } packet_entities_t;
 
 #endif
 
-typedef struct usercmd_s {
+typedef struct usercmd_s 
+{
 	byte	msec;
 	vec3_t	angles;
-	short	forwardmove, sidemove, upmove;
+	short	forwardmove;
+	short	sidemove;
+	short	upmove;
 	byte	buttons;
 	byte	impulse;
 } usercmd_t;
+
+typedef struct h_info_s
+{
+	int type;
+	vec3_t  origin;
+} h_info_t;
+
+typedef struct frame_info_s
+{
+	int			healthcount;
+	h_info_t	healthinfo[32];
+	int			jumpcount;
+	vec3_t		jumpinfo[32];
+} frame_info_t;
+
+typedef struct players_s
+{
+	#ifdef __CONSISTENCY_CHECK__
+	char	name[64];
+	char	userinfo[512];
+	char	team[64];
+	#else
+	char	*name;
+	char	*userinfo;
+	char	*team;
+	#endif
+
+	int		pnum;
+	int		frame;
+	int		userid;
+	int		frags;
+	int		spectator;
+	int		stats[MAX_CL_STATS];
+	float	pl;
+	int		pl_count;
+	float	pl_average;
+	float	pl_highest;
+	float	pl_lowest;
+	float	ping;
+	int		ping_count;
+	float	ping_average;
+	float	ping_highest;
+	float	ping_lowest;
+	int		armor_count[3];
+	int		weapon_count[7];
+	int		weapon_drops[7];
+	int		weapon_shots[9];
+	
+	int		armor_took_flag;
+	float	weapon_time[7];
+	int		death_count;
+	int		megahealth_count;
+	
+	int		quad_count;
+	int		ring_count;
+	int		pent_count;
+
+	int		armor_wasted[3];
+	int		health_count[3];
+	int		health_wasted;
+	int		jump_count;
+	int		damage_health[4];
+	int		damage_armor[3];
+	int		weaponframe;
+	int		speed_frame_count;
+	float	acc_average_speed;
+	float	speed_highest;
+	vec3_t	origin;
+
+	int		mysql_id;
+
+	qbool	teamkill_flag;
+} players_t;
+
+typedef struct fragstats_s
+{
+	int		kills[32][64];
+	int		deaths[32][64];
+	int		wdeaths[64];
+	int		wkills[64];
+	int		tkills[64];
+	int		tdeaths[64];
+	int		total_frags;
+	int		flag_touches;
+	int		flag_dropped;
+	int		flag_captured;
+	int		suicides;
+	int		teamkills;
+} fragstats_t ;
+
+typedef struct server_s
+{
+	char    *serverinfo;
+	qbool    countdown;
+	qbool    match_started;
+} server_t;
+
+typedef struct mvd_info_s
+{
+	byte			*demo_ptr;					// A pointer to the current position in the demo.
+	byte			*demo_start;				// A pointer to the start of the demo.
+	long			demo_size;					// The size of the demo in bytes.
+	float			demotime;					// The current time in the demo.
+	int				lastto;						// The player number/bitmask of the last player/players a demo message was directed at.
+	int				lasttype;					// The type of the last demo message.
+
+	frame_info_t	frame_info;					// Some info on the current frame.
+	players_t		players[MAX_PLAYERS];		// Current frame playerinfo
+	players_t		lf_players[MAX_PLAYERS];	// Last    frame playerinfo
+	players_t		ltr_players[MAX_PLAYERS];	// Only used for debugging with -t
+	fragstats_t		fragstats[MAX_PLAYERS];
+	char			*sndlist[1024];
+	server_t		serverinfo;
+} mvd_info_t;
 
 // usercmd button bits
 #define BUTTON_ATTACK	(1 << 0)
