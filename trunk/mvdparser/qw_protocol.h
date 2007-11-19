@@ -442,6 +442,7 @@ typedef struct mvd_info_s
 	int				lastto;						// The player number/bitmask of the last player/players a demo message was directed at.
 	int				lasttype;					// The type of the last demo message.
 
+	int				frame_count;				// Number of read MVD frames.
 	frame_info_t	frame_info;					// Some info on the current frame.
 	players_t		players[MAX_PLAYERS];		// Current frame playerinfo
 	players_t		lf_players[MAX_PLAYERS];	// Last    frame playerinfo
