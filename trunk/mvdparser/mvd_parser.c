@@ -80,9 +80,9 @@ static qbool MVD_Parser_ReadFrame(mvd_info_t *mvd)
 			return false;
 		}
 
-		Sys_PrintDebug(5, "MVD_Parser_ReadFrame: Read MVD Frame %i\n", mvd->frame_count++);
-
 		mvd->demotime += (mvd_time * 0.001f);
+
+		Sys_PrintDebug(5, "MVD_Parser_ReadFrame: Time: %g Frame: %i \n", mvd->demotime, mvd->frame_count++);
 
 		// Get the msg type.
 		if (!MVD_Parser_DemoRead(mvd, &c, 1, false))
@@ -263,7 +263,6 @@ qbool MVD_Parser_StartParse(byte *mvdbuf, long filelen)
 		MSG_BeginReading();
 
 		// Read an MVD frame.
-		//Sys_PrintDebug(2, "Reading MVD frame\n");
 		if (!MVD_Parser_ReadFrame(&mvd))
 		{
 			Q_free(net_message.data);
