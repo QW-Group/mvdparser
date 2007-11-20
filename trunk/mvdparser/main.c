@@ -17,25 +17,34 @@ qbool Cmdline_Parse(int argc, char **argv)
 	int filecount = 0;
 	char *arg;
 
+	memset(&cmdargs, 0, sizeof(cmdargs));
+
 	if (argc < 2)
 	{
 		return false;
 	}
 
-	memset(&cmdargs, 0, sizeof(cmdargs));
-
 	for (i = 1; i < argc; i++)
 	{
 		arg = argv[i];
 
-		if ((arg[0] == '-') && arg[1])
+		if (((arg[0] == '-') || (arg[0] == '/')) && arg[1])
 		{
 			// Command line switch.
 			switch(arg[1])
 			{
-				case 'd' :
-					cmdargs.debug = true;
+				case 'v' :
+				{
+					// Verbosity based on how many v's where specified.
+					int j = 1;
+					
+					while (arg[j] == 'v')
+					{
+						cmdargs.debug++;
+						j++;						
+					}	
 					break;
+				}
 			}
 		}
 		else
