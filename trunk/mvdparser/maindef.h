@@ -4,7 +4,12 @@
 
 #include "stdlib.h"
 
-#define MAX_PLAYERS		32
+#define MAX_PLAYERS				32
+
+#define	MAX_INFO_KEY			64
+#define	MAX_INFO_STRING			384
+#define	MAX_SERVERINFO_STRING	512
+#define	MAX_LOCALINFO_STRING	32768
 
 // Typedefs.
 typedef unsigned char byte;
@@ -45,9 +50,13 @@ char *Q_strdup (const char *src);
 void Sys_InitDoubleTime (void);
 double Sys_DoubleTime (void);
 
+char *Sys_RedToWhite(char *txt);
+
 void Sys_Print(char *format, ...);
 void Sys_PrintDebug(int debuglevel, char *format, ...);
 void Sys_PrintError(char *format, ...);
 #define Sys_Error(format, ...) {Sys_PrintError(format, ##__VA_ARGS__); exit(1);}
+
+size_t strlcpy(char *dst, const char *src, size_t siz);
 
 #endif // __MAINDEF_H__

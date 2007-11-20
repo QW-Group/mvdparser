@@ -51,6 +51,42 @@ char *Q_strdup (const char *src)
 	return p;
 }
 
+char *Sys_RedToWhite(char *txt)
+{
+	byte *s = txt;
+
+	if (!s)
+	{
+		return NULL;
+	}
+
+	while (*s)
+	{
+		if ((*s >= 18) && (*s <= 27))
+		{
+			*s += 30;
+		}
+		else if (*s >= 146 && *s <= 155)
+		{
+			*s -= 98; // Yellow numbers.
+		}
+		else
+		{
+			*s &= ~128;	// Remove the highest bit in the byte (which makes the text red).
+		}
+
+		// Get rid of bell chars (ASCII 7), printf will beep otherwise :)
+		if (*s == (char)0x7)
+		{
+			*s = ' ';
+		}
+
+		s++;
+	}
+
+	return txt;
+}
+
 void Sys_PrintError(char *format, ...)
 {
 	va_list argptr;
@@ -81,7 +117,7 @@ void Sys_PrintDebug(int debuglevel, char *format, ...)
 	va_list argptr;
 	char string[1024];
 
-	if (cmdargs.debug >= debuglevel)
+	if (debuglevel > cmdargs.debug)
 	{
 		return;
 	}
@@ -92,4 +128,36 @@ void Sys_PrintDebug(int debuglevel, char *format, ...)
 
 	printf(string, argptr);
 }
+
+#if defined(__linux__) || defined(_WIN32)
+size_t strlcpy(char *dst, const char *src, size_t siz)
+{
+	register char *d = dst;
+	register const char *s = src;
+	register size_t n = siz;
+
+	// Copy as many bytes as will fit.
+	if (n != 0 && --n != 0) 
+	{
+		do 
+		{
+			if ((*d++ = *s++) == 0)
+				break;
+		} while (--n != 0);
+	}
+
+	// Not enough room in dst, add NULL and traverse rest of src.
+	if (n == 0) 
+	{
+		if (siz != 0)
+			*d = '\0';		// NULL-terminate dst.
+
+		while (*s++)
+			;
+	}
+
+	return(s - src - 1);	// Count does not include NULL.
+}
+#endif
+
 
