@@ -5,19 +5,319 @@
 #include "net_msg.h"
 #include "netmsg_parser.h"
 
-void NetMsg_Parser_LogEvent(int i, int type,char *string)
+// ========================================================================================
+// HELPER FUNCTITONS
+// ========================================================================================
+
+void NetMsg_Parser_LogEvent(int i, int type, char *string)
 {
 	// TODO : Log events.
 }
 
-static void NetMsg_Parser_ProcessStufftext(char *stufftext)
+// Searches the string for the given key and returns the associated value, or an empty string.
+static char *Info_ValueForKey(char *s, char *key)
 {
-	if (strstr(stufftext, "fullserverinfo"))
+	char pkey[512];
+	static char value[4][512];	// Use two buffers so compares work without stomping on each other.
+	static int	valueindex;
+	char *o;
+
+	valueindex = (valueindex + 1) % 4;
+	
+	if (*s == '\\')
+		s++;
+
+	while (1) 
 	{
-		//l_printf("fullserverinfo recieved\n %s \n", stufftext);
-		//serverinfo.serverinfo = strdup(stufftext);
-		// TODO : Fix this.
+		o = pkey;
+		while (*s != '\\') 
+		{
+			if (!*s)
+				return "";
+			*o++ = *s++;
+		}
+		*o = 0;
+		s++;
+
+		o = value[valueindex];
+
+		while (*s != '\\' && *s)
+		{
+			if (!*s)
+				return "";
+			*o++ = *s++;
+		}
+		*o = 0;
+
+		if (!strcmp (key, pkey))
+			return value[valueindex];
+
+		if (!*s)
+			return "";
+		s++;
 	}
+}
+
+__inline qbool check_stat(int item, int player_stat, int value)
+{
+	return ((value & item) && !(player_stat & item));
+}
+
+static void Stat_CalculateShotsFired(players_t *cp, int stat, int value)
+{
+	switch (stat)
+	{
+		default :
+		{
+			break;
+		}
+		case STAT_SHELLS :
+		{
+			if (cp->stats[STAT_ACTIVEWEAPON] == IT_SHOTGUN)
+			{
+				cp->weapon_shots[1] += cp->stats[STAT_SHELLS] - value;
+			}
+
+			if (cp->stats[STAT_ACTIVEWEAPON] == IT_SUPER_SHOTGUN)
+			{
+				cp->weapon_shots[2] += cp->stats[STAT_SHELLS] - value;
+			}
+			
+			break;
+		}
+		case STAT_NAILS :
+		{
+			if (cp->stats[STAT_ACTIVEWEAPON] == IT_NAILGUN)
+			{
+				cp->weapon_shots[3] += cp->stats[STAT_NAILS] - value;
+			}
+
+			if (cp->stats[STAT_ACTIVEWEAPON] == IT_SUPER_NAILGUN)
+			{
+				cp->weapon_shots[4] += cp->stats[STAT_NAILS] - value;
+			}
+
+			break;
+		}
+		case STAT_ROCKETS :
+		{
+			if (cp->stats[STAT_ACTIVEWEAPON] == IT_GRENADE_LAUNCHER)
+			{
+				cp->weapon_shots[5] += cp->stats[STAT_ROCKETS] - value;
+			}
+
+			if (cp->stats[STAT_ACTIVEWEAPON] == IT_ROCKET_LAUNCHER)
+			{
+				cp->weapon_shots[6] += cp->stats[STAT_ROCKETS] - value;
+			}
+		}
+		case STAT_CELLS :
+		{
+			if (cp->stats[STAT_ACTIVEWEAPON] == IT_LIGHTNING)
+			{
+				cp->weapon_shots[7] += cp->stats[STAT_CELLS] - value;
+			}
+		}
+	}
+}
+
+static void Stat_CheckItemPickup(players_t *cp, int stat, int value)
+{
+	// Check which bits of the item stat bitmask have changed.
+
+	if (check_stat(IT_ARMOR1, cp->stats[stat], value))
+	{
+		cp->armor_count[0]++;
+	}
+
+	if (check_stat(IT_ARMOR2, cp->stats[stat], value))
+	{
+		cp->armor_count[1]++;
+	}
+
+	if (check_stat(IT_ARMOR3, cp->stats[stat], value))
+	{
+		cp->armor_count[2]++;
+	}
+
+	if (check_stat(IT_INVISIBILITY, cp->stats[stat], value))
+	{
+		cp->ring_count++;
+	}
+	
+	if (check_stat(IT_QUAD, cp->stats[stat], value))
+	{
+		cp->quad_count++;
+	}
+
+	if (check_stat(IT_INVULNERABILITY, cp->stats[stat], value))
+	{
+		cp->pent_count++;
+	}
+
+	if (check_stat(IT_SUPER_SHOTGUN, cp->stats[stat], value))
+	{
+		cp->weapon_count[0]++;
+	}
+
+	if (check_stat(IT_NAILGUN, cp->stats[stat], value))
+	{
+		cp->weapon_count[1]++;
+	}
+	
+	if (check_stat(IT_SUPER_NAILGUN, cp->stats[stat], value))
+	{
+		cp->weapon_count[2]++;
+	}
+
+	if (check_stat(IT_GRENADE_LAUNCHER, cp->stats[stat], value))
+	{
+		cp->weapon_count[3]++;
+	}
+
+	if (check_stat(IT_ROCKET_LAUNCHER, cp->stats[stat], value))
+	{
+		cp->weapon_count[4]++;
+	}
+	
+	if (check_stat(IT_LIGHTNING, cp->stats[stat], value))
+	{
+		cp->weapon_count[5]++;
+	}
+
+	if (check_stat(IT_SUPERHEALTH, cp->stats[stat], value))
+	{
+		cp->megahealth_count++;
+	}
+}
+
+static void Stat_Death(mvd_info_t *mvd, players_t *cp)
+{
+	if (cp->stats[STAT_ACTIVEWEAPON] & IT_LIGHTNING)
+	{
+		cp->weapon_drops[5]++;
+		NetMsg_Parser_LogEvent(mvd->lastto, 2, "lg");
+	}
+	
+	if (cp->stats[STAT_ACTIVEWEAPON] & IT_ROCKET_LAUNCHER)
+	{
+		cp->weapon_drops[4]++;
+		NetMsg_Parser_LogEvent(mvd->lastto, 2, "rl");
+    }
+
+	if (cp->stats[STAT_ACTIVEWEAPON] & IT_GRENADE_LAUNCHER)
+    {
+		cp->weapon_drops[3]++;
+		NetMsg_Parser_LogEvent(mvd->lastto, 2, "gl");
+    }
+
+	if (cp->stats[STAT_ACTIVEWEAPON] & IT_SUPER_NAILGUN)
+	{
+		cp->weapon_drops[2]++;
+		NetMsg_Parser_LogEvent(mvd->lastto, 2, "sng");
+    }
+
+	if (cp->stats[STAT_ACTIVEWEAPON] & IT_NAILGUN)
+	{
+		cp->weapon_drops[1]++;
+		NetMsg_Parser_LogEvent(mvd->lastto, 2, "ng");
+	}
+	
+	if (cp->stats[STAT_ACTIVEWEAPON] & IT_SUPER_SHOTGUN)
+	{
+		cp->weapon_drops[0]++;
+		NetMsg_Parser_LogEvent(mvd->lastto, 2, "ssg");
+	}
+}
+
+static void Stat_HealthLoss(players_t *cp, int stat, int value)
+{
+	// TODO : Hmmmmm, what about when picking up health boxes???
+
+	if (cp->stats[STAT_ITEMS] & IT_ARMOR1)
+	{
+		cp->damage_health[0] += cp->stats[stat] - value;
+	}
+	else if (cp->stats[STAT_ITEMS] & IT_ARMOR2)
+	{
+		cp->damage_health[1] += cp->stats[stat] - value;
+	}
+	else if (cp->stats[STAT_ITEMS] & IT_ARMOR3)
+	{
+		cp->damage_health[2] += cp->stats[stat] - value;
+	}
+	else if (!(cp->stats[STAT_ITEMS] & IT_ARMOR3) && !(cp->stats[STAT_ITEMS] & IT_ARMOR2) && !(cp->stats[STAT_ITEMS] & IT_ARMOR1))
+	{
+		cp->damage_health[3] += cp->stats[stat] - value;
+	}
+}
+
+static void Stat_ArmorDamage(players_t *cp, int stat, int value)
+{
+	if (cp->stats[STAT_ITEMS] & IT_ARMOR1)
+	{
+		cp->damage_armor[0] += cp->stats[stat] - value;
+	}
+	else if (cp->stats[STAT_ITEMS] & IT_ARMOR2)
+	{
+		cp->damage_armor[1] += cp->stats[stat] - value;
+	}
+	else if (cp->stats[STAT_ITEMS] & IT_ARMOR3)
+	{
+		cp->damage_armor[2] += cp->stats[stat] - value;
+	}
+}
+
+static void SetStat(mvd_info_t *mvd, int stat, int value)
+{
+	// In this case the net message doesn't contain what player the message
+	// is directed to, so we have to use the MVDs lastto for this.
+	players_t *cp = &mvd->players[mvd->lastto];
+
+	// Only gather stats during a match.
+	if (!mvd->serverinfo.match_started)
+    {
+		cp->stats[stat] = value;
+		return;
+	}
+
+	// We got less of this stat than before, if it's shells, 
+	// the current player just shot a weapon.
+	if (cp->stats[stat] > value)
+    {
+		Stat_CalculateShotsFired(cp, stat, value);
+	}
+
+	// Something was picked up.
+	if (stat == STAT_ITEMS)
+	{
+		Stat_CheckItemPickup(cp, stat, value);
+	}
+
+	if (stat == STAT_HEALTH)
+	{
+		// The player just died, check what was dropped, and log a death event.
+		if (value <= 0 )
+		{
+			Stat_Death(mvd, cp);
+		}
+
+		if (cp->stats[stat] > value)
+		{
+			Stat_HealthLoss(cp, stat, value);
+		}
+    }
+
+	if (stat == STAT_ARMOR)
+	{
+		if (cp->stats[stat] > value)
+		{
+			Stat_ArmorDamage(cp, stat, value);
+		}
+	}
+
+	// Save the new value.
+	cp->stats[stat] = value;
 }
 
 static void NetMsg_Parser_ParsePacketEntities(mvd_info_t *mvd, qbool delta)
@@ -84,22 +384,28 @@ static void NetMsg_Parser_ParsePacketEntities(mvd_info_t *mvd, qbool delta)
 	}
 }
 
-static void NetMsg_Parser_Parse_svc_updatestat(void)
+// ========================================================================================
+// NET MESSAGE FUNCTITONS
+// ========================================================================================
+
+static void NetMsg_Parser_Parse_svc_updatestat(mvd_info_t *mvd)
 {
 	int stat = MSG_ReadByte();
 	int value = MSG_ReadByte();
-	// TODO : Update stats.
+	
+	SetStat(mvd, stat, value);
 }
 
 static void NetMsg_Parser_Parse_svc_setview(void)
 {
 }
 
-static void NetMsg_Parser_Parse_svc_sound(void)
+static void NetMsg_Parser_Parse_svc_sound(mvd_info_t *mvd)
 {
 	int i;
 	int soundnum;
 	vec3_t loc;
+	frame_info_t *fi = &mvd->frame_info;
 	int channel = MSG_ReadShort();
 
 	if (channel & SND_VOLUME)
@@ -114,21 +420,63 @@ static void NetMsg_Parser_Parse_svc_sound(void)
 
 	soundnum = MSG_ReadByte();
 	
+	// Sound location.
 	for (i = 0; i < 3; i++)
+	{
 		loc[i]= MSG_ReadCoord();
+	}
 
-	// TODO : Parse the sound types.
+	// Only parse sounds when match has started.
+	if (mvd->serverinfo.match_started)
+	{
+		if (!strcmp("items/r_item1.wav", mvd->sndlist[soundnum]))
+		{
+			fi->healthinfo[fi->healthcount].type = 1;
+			VectorCopy(loc, fi->healthinfo[fi->healthcount].origin);
+			fi->healthcount++;
+		}
+		if (!strcmp("items/health1.wav", mvd->sndlist[soundnum]))
+		{
+			fi->healthinfo[fi->healthcount].type = 2;
+			VectorCopy(loc, fi->healthinfo[fi->healthcount].origin);
+			fi->healthcount++;
+		}
+		if (!strcmp("items/r_item2.wav", mvd->sndlist[soundnum]))
+		{
+			fi->healthinfo[fi->healthcount].type = 3;
+			VectorCopy(loc, fi->healthinfo[fi->healthcount].origin);
+			fi->healthcount++;
+		}
+		if (!strcmp("player/plyrjmp8.wav", mvd->sndlist[soundnum]))
+		{
+			VectorCopy(loc, fi->jumpinfo[fi->jumpcount]);
+			fi->jumpcount++;
+		}
+	}
+
+	Sys_PrintDebug(4, "svc_sound: %s (x: %f y: %f z: %f)\n", mvd->sndlist[soundnum], loc[0], loc[1], loc[2]);
 }
 
 static void NetMsg_Parser_Parse_svc_print(void)
 {
 	int level = MSG_ReadByte();
 	char *str = MSG_ReadString();
+
+	Sys_PrintDebug(5, "svc_print: (%s) RAW: %s\n", print_strings[level], str);
+	Sys_PrintDebug(1, "svc_print: (%s) %s\n", print_strings[level], Sys_RedToWhite(str));
+	
+	// TODO : Parse frags.
 }
 
-static void NetMsg_Parser_Parse_svc_stufftext(void)
+static void NetMsg_Parser_Parse_svc_stufftext(mvd_info_t *mvd)
 {
-	char *str = MSG_ReadString();
+	char *stufftext = MSG_ReadString();
+
+	if (strstr(stufftext, "fullserverinfo"))
+	{
+		Q_free(mvd->serverinfo.serverinfo);
+		mvd->serverinfo.serverinfo = Q_strdup(stufftext);
+	}
 }
 
 static void NetMsg_Parser_Parse_svc_setangle(void)
@@ -151,6 +499,13 @@ static void NetMsg_Parser_Parse_svc_serverdata(void)
 	char *gamedir	= MSG_ReadString();
 	float demotime	= MSG_ReadFloat();
 	char *levelname = MSG_ReadString();
+
+	Sys_PrintDebug(1, "sys_serverdata:\n");
+	Sys_PrintDebug(1, "Protocol version: %i\n", protover);
+	Sys_PrintDebug(1, "Servercount: %i\n", servercount);
+	Sys_PrintDebug(1, "Gamedir: %s\n", gamedir);
+	Sys_PrintDebug(1, "Demotime: %f\n", demotime);
+	Sys_PrintDebug(1, "Levelname: %s\n", levelname);
 
 	for (i = 0; i < 10; i++)
 	{
@@ -255,6 +610,9 @@ static void NetMsg_Parser_Parse_svc_setpause(void)
 static void NetMsg_Parser_Parse_svc_centerprint(void)
 {
 	char *str = MSG_ReadString();
+
+	Sys_PrintDebug(5, "svc_centerprint: RAW: %s\n", str);
+	Sys_PrintDebug(1, "svc_centerprint: %s\n", Sys_RedToWhite(str));
 }
 
 static void NetMsg_Parser_Parse_svc_killedmonster(void)
@@ -331,17 +689,23 @@ static void NetMsg_Parser_Parse_svc_updateping(mvd_info_t *mvd)
 	mvd->players[pnum].ping_lowest  = min(mvd->players[pnum].ping_lowest, mvd->players[pnum].ping);
 }
 
-static void NetMsg_Parser_Parse_svc_updateentertime(void)
+static void NetMsg_Parser_Parse_svc_updateentertime(mvd_info_t *mvd)
 {
-	MSG_ReadByte();		// Player.
-	MSG_ReadFloat();	// Time.
+	int pnum	= MSG_ReadByte();	// Player.
+	float time	= MSG_ReadFloat();	// Time (sent as seconds ago).
+
+	mvd->players[pnum].entertime = mvd->demotime - time;
+
+	// TODO: Hmmm??? wtf is this, gives values like 1019269.8
+	Sys_PrintDebug(4, "svc_updateentertime: %s %f\n", Sys_RedToWhite(mvd->players[pnum].name), mvd->players[pnum].entertime);
 }
 
-static void NetMsg_Parser_Parse_svc_updatestatlong(void)
+static void NetMsg_Parser_Parse_svc_updatestatlong(mvd_info_t *mvd)
 {
 	int stat = MSG_ReadByte();
 	int value = MSG_ReadLong();
-	// TODO : Update stats.
+	
+	SetStat(mvd, stat, value);
 }
 
 static void NetMsg_Parser_Parse_svc_muzzleflash(void)
@@ -351,21 +715,50 @@ static void NetMsg_Parser_Parse_svc_muzzleflash(void)
 
 static void NetMsg_Parser_Parse_svc_updateuserinfo(mvd_info_t *mvd)
 {
-	char *str;
-	int pnum = MSG_ReadByte ();					// Player.
-	mvd->players[pnum].userid = MSG_ReadLong (); // Userid.
+	char *userinfo = NULL;
+	players_t *player = NULL;
 
-	str = MSG_ReadString(); // Userinfo string.
+	int pnum = MSG_ReadByte ();			// Player.
 
-	if (!str[0])
+	player = &mvd->players[pnum];
+	player->userid = MSG_ReadLong ();	// Userid.
+
+	userinfo = MSG_ReadString();		// Userinfo string.
+
+	if (!userinfo[0])
 	{
 		return;
 	}
 
+	// Update the userinfo.
 	Q_free(mvd->players[pnum].userinfo);
-	mvd->players[pnum].userinfo = Q_strdup(str);
+	player->userinfo = Q_strdup(userinfo);
 
-	// TODO : Update name and such from the userinfo.
+	// Parse the userinfo.
+	{
+		// Name.
+		Q_free(player->name);
+		player->name = Q_strdup(Info_ValueForKey(player->userinfo, "name"));
+
+		// Color.
+		player->topcolor	= atoi(Info_ValueForKey(player->userinfo, "topcolor"));
+		player->bottomcolor	= atoi(Info_ValueForKey(player->userinfo, "bottomcolor"));
+		
+		// Team.
+		Q_free(player->team);
+		player->team = Q_strdup(Info_ValueForKey(player->userinfo, "team"), sizeof (player->team));
+
+		// Spectator.
+		player->spectator = (qbool)(Info_ValueForKey(player->userinfo, "*spectator")[0]);
+	}
+
+	Sys_PrintDebug(1, "svc_updateuserinfo: Player %i\n", pnum);
+	Sys_PrintDebug(1, "%s\n", player->userinfo);
+	Sys_PrintDebug(1, "name        = %s\n", Sys_RedToWhite(player->name));
+	Sys_PrintDebug(1, "team        = %s\n", player->team);
+	Sys_PrintDebug(1, "topcolor    = %i\n", player->topcolor);
+	Sys_PrintDebug(1, "bottomcolor = %i\n", player->bottomcolor);
+	Sys_PrintDebug(1, "spectator   = %i\n", player->spectator);
 }
 
 static void NetMsg_Parser_Parse_svc_download(void)
@@ -395,7 +788,7 @@ static void NetMsg_Parser_Parse_svc_playerinfo(mvd_info_t *mvd)
 	{
 		if (flags & (DF_ANGLES << i))
 		{
-			MSG_ReadAngle16();
+			mvd->players[num].viewangles[i] = MSG_ReadAngle16();
 		}
 	}
 
@@ -406,7 +799,7 @@ static void NetMsg_Parser_Parse_svc_playerinfo(mvd_info_t *mvd)
 
 	if (flags & DF_SKINNUM)
 	{
-		MSG_ReadByte(); // skinnum
+		MSG_ReadByte(); // Skinnum
 	}
 
 	if (flags & DF_EFFECTS)
@@ -447,22 +840,26 @@ static void NetMsg_Parser_Parse_svc_modellist(void)
 	MSG_ReadByte(); // Ignore.
 }
 
-static void NetMsg_Parser_Parse_svc_soundlist(void)
+static void NetMsg_Parser_Parse_svc_soundlist(mvd_info_t *mvd)
 {
-	char *str;
-	int soundcount = MSG_ReadByte();
+	char *soundname;
+	int soundindex = MSG_ReadByte();
+
+	Sys_PrintDebug(3, "svc_soundlist: Start sound index: %i\n", soundindex);
 
 	while (true)
 	{
-		str = MSG_ReadString();
+		soundname = MSG_ReadString();
 
-		if (!str[0])
+		if (!soundname[0])
 		{
 			break;
 		}
 
-		soundcount++;
-		// TODO: Save the list of sounds.
+		Sys_PrintDebug(3, "sound %i: %s\n", soundindex, soundname);
+
+		mvd->sndlist[soundindex] = Q_strdup(soundname);
+		soundindex++;
 	}
 
 	MSG_ReadByte(); // Ignore.
@@ -496,12 +893,17 @@ static void NetMsg_Parser_Parse_svc_setinfo(void)
 	// TODO : Save name and such.
 }
 
-static void NetMsg_Parser_Parse_svc_serverinfo(void)
+static void NetMsg_Parser_Parse_svc_serverinfo(mvd_info_t *mvd)
 {
 	char *key = MSG_ReadString();
 	char *value = MSG_ReadString();
 
-	// TODO : Parse server info.
+	if (!strcmp(key, "status") && strcmp(value, "Countdown"))
+	{
+		// TODO : Do a better check here maybe?
+		// If the status is not countdown, the match has started.
+		mvd->serverinfo.match_started = true;
+	}
 }
 
 static void NetMsg_Parser_Parse_svc_updatepl(mvd_info_t *mvd)
@@ -628,7 +1030,7 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			}
 			case svc_stufftext :
 			{
-				NetMsg_Parser_Parse_svc_stufftext();
+				NetMsg_Parser_Parse_svc_stufftext(mvd);
 				break;
 			}
 			case svc_damage :
@@ -658,7 +1060,7 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			}
 			case svc_soundlist :
 			{
-				NetMsg_Parser_Parse_svc_soundlist();
+				NetMsg_Parser_Parse_svc_soundlist(mvd);
 				break;
 			}
 			case svc_spawnstaticsound :
@@ -688,7 +1090,7 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			}
 			case svc_updateentertime :
 			{
-				NetMsg_Parser_Parse_svc_updateentertime();
+				NetMsg_Parser_Parse_svc_updateentertime(mvd);
 				break;
 			}
 			case svc_updateuserinfo :
@@ -708,7 +1110,7 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			}
 			case svc_serverinfo :
 			{
-				NetMsg_Parser_Parse_svc_serverinfo();
+				NetMsg_Parser_Parse_svc_serverinfo(mvd);
 				break;
 			}
 			case svc_packetentities :
@@ -723,17 +1125,17 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			}
 			case svc_updatestatlong :
 			{
-				NetMsg_Parser_Parse_svc_updatestatlong();
+				NetMsg_Parser_Parse_svc_updatestatlong(mvd);
 				break;
 			}
 			case svc_updatestat :
 			{
-				NetMsg_Parser_Parse_svc_updatestat();
+				NetMsg_Parser_Parse_svc_updatestat(mvd);
 				break;
 			}
 			case svc_sound :
 			{
-				NetMsg_Parser_Parse_svc_sound();
+				NetMsg_Parser_Parse_svc_sound(mvd);
 				break;
 			}
 			case svc_temp_entity :
