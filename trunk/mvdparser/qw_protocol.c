@@ -1,4 +1,11 @@
 
+char *print_strings[] =
+{
+	"PICKUP",
+	"DEATH",
+	"CRITICAL",
+	"CHAT"
+};
 
 char *svc_strings[] =
 {

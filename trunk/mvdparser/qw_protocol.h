@@ -34,7 +34,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define PORT_QUAKETV 27900
 
 //=========================================
-
 // out of band message id bytes
 
 // M = master, S = server, C = client, A = any
@@ -52,6 +51,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	A2C_CLIENT_COMMAND	'B'	// + command line
 #define	S2M_SHUTDOWN		'C'
 
+// Print flags
+#define	PRINT_LOW			0		// Pickup messages
+#define	PRINT_MEDIUM		1		// Death messages
+#define	PRINT_HIGH			2		// Critical messages
+#define	PRINT_CHAT			3		// Chat messages
+extern char *print_strings[];		// Contains descriptions of the print levels.
 
 //==================
 // note that there are some defs.qc that mirror to these numbers
@@ -367,7 +372,7 @@ typedef struct players_s
 	int		frame;
 	int		userid;
 	int		frags;
-	int		spectator;
+	qbool	spectator;
 	int		stats[MAX_CL_STATS];
 	float	pl;
 	int		pl_count;
@@ -404,8 +409,12 @@ typedef struct players_s
 	float	acc_average_speed;
 	float	speed_highest;
 	vec3_t	origin;
+	vec3_t	viewangles;
 
-	int		mysql_id;
+	float	entertime;
+
+	int		topcolor;
+	int		bottomcolor;
 
 	qbool	teamkill_flag;
 } players_t;
