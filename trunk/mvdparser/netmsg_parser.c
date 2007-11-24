@@ -4,6 +4,7 @@
 #include "mvd_parser.h"
 #include "net_msg.h"
 #include "netmsg_parser.h"
+#include "frag_parser.h"
 
 // ========================================================================================
 // HELPER FUNCTITONS
@@ -454,10 +455,10 @@ static void NetMsg_Parser_Parse_svc_sound(mvd_info_t *mvd)
 		}
 	}
 
-	Sys_PrintDebug(4, "svc_sound: %s (x: %f y: %f z: %f)\n", mvd->sndlist[soundnum], loc[0], loc[1], loc[2]);
+	Sys_PrintDebug(5, "svc_sound: %s (x: %g y: %g z: %g)\n", mvd->sndlist[soundnum], loc[0], loc[1], loc[2]);
 }
 
-static void NetMsg_Parser_Parse_svc_print(void)
+static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 {
 	int level = MSG_ReadByte();
 	char *str = MSG_ReadString();
@@ -466,6 +467,14 @@ static void NetMsg_Parser_Parse_svc_print(void)
 	Sys_PrintDebug(1, "svc_print: (%s) %s\n", print_strings[level], Sys_RedToWhite(str));
 	
 	// TODO : Parse frags.
+	Frags_Parse(mvd, str, level);
+
+	if ((level == PRINT_HIGH) && !strncmp(str, "matchdate:", 10))
+	{
+		// TODO : Save match start date.
+		// matchdate: Fri Nov 23, 16:33:46 2007
+		// matchdate: 2007-11-23 17:12:44 CET
+	}
 }
 
 static void NetMsg_Parser_Parse_svc_stufftext(mvd_info_t *mvd)
@@ -583,7 +592,7 @@ static void NetMsg_Parser_Parse_svc_temp_entity(void)
 
 	if (type == TE_GUNSHOT || type == TE_BLOOD)
 	{
-		MSG_ReadByte ();
+		MSG_ReadByte();
 	}
 
 	if (type == TE_LIGHTNING1 || type == TE_LIGHTNING2 || type ==  TE_LIGHTNING3)
@@ -746,7 +755,7 @@ static void NetMsg_Parser_Parse_svc_updateuserinfo(mvd_info_t *mvd)
 		
 		// Team.
 		Q_free(player->team);
-		player->team = Q_strdup(Info_ValueForKey(player->userinfo, "team"), sizeof (player->team));
+		player->team = Q_strdup(Info_ValueForKey(player->userinfo, "team"));
 
 		// Spectator.
 		player->spectator = (qbool)(Info_ValueForKey(player->userinfo, "*spectator")[0]);
@@ -884,13 +893,21 @@ static void NetMsg_Parser_Parse_svc_entgravity(void)
 {
 }
 
-static void NetMsg_Parser_Parse_svc_setinfo(void)
+static void NetMsg_Parser_Parse_svc_setinfo(mvd_info_t *mvd)
 {
-	int slot	= MSG_ReadByte();
+	int pnum	= MSG_ReadByte();
 	char *key	= MSG_ReadString();
 	char *value = MSG_ReadString();
+
+	Sys_PrintDebug(2, "svc_setinfo: player: %i name: %s key: \"%s\" value \"%s\"\n", pnum, mvd->players[pnum].name, key, value);
 	
-	// TODO : Save name and such.
+	if (!strcmp(key, "name"))
+	{
+		Sys_PrintDebug(1, "svc_setinfo: Player %i renamed from %s to %s\n", pnum, mvd->players[pnum].name, value);
+		
+		Q_free(mvd->players[pnum].name);
+		mvd->players[pnum].name = Q_strdup(value);
+	}
 }
 
 static void NetMsg_Parser_Parse_svc_serverinfo(mvd_info_t *mvd)
@@ -1020,7 +1037,7 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			}
 			case svc_print :
 			{
-				NetMsg_Parser_Parse_svc_print();
+				NetMsg_Parser_Parse_svc_print(mvd);
 				break;
 			}
 			case svc_centerprint :
@@ -1150,7 +1167,7 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			}
 			case svc_setinfo :
 			{
-				NetMsg_Parser_Parse_svc_setinfo();
+				NetMsg_Parser_Parse_svc_setinfo(mvd);
 				break;
 			}
 			case svc_muzzleflash :

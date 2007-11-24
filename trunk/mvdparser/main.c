@@ -2,6 +2,7 @@
 #include <string.h>
 #include "maindef.h"
 #include "mvd_parser.h"
+#include "frag_parser.h"
 
 cmdline_params_t cmdargs;
 
@@ -71,60 +72,6 @@ qbool Cmdline_Parse(int argc, char **argv)
 	return true;
 }
 
-qbool ReadFile(char *filename, byte **data, long *filelen)
-{
-	long len = 0;
-	FILE *f = NULL;
-
-	f = fopen(filename, "rb");
-
-	if (filelen)
-	{
-		(*filelen) = -1;
-	}
-
-	if (f && data)
-	{
-		size_t num_read = 0;
-
-		// Get the file size.
-		fseek(f, 0, SEEK_END);
-		len = ftell(f);
-		rewind(f);
-
-		if (len < 0)
-		{
-			Sys_PrintError("File is empty: %s\n", filename);
-			fclose(f);
-			return false;
-		}
-
-		(*data) = Q_malloc(sizeof(byte) * len);
-
-		num_read = fread((*data), 1, len, f);
-
-		fclose(f);
-
-		if (!feof(f) && (num_read != (size_t)len))
-		{
-			// We failed to read the entire file.
-			return false;
-		}
-	}
-	else
-	{
-		Sys_PrintError("Failed to open file: %s\n", filename);
-		return false;
-	}
-
-	if (filelen)
-	{
-		(*filelen) = len;
-	}
-
-	return true;
-}
-
 int main(int argc, char **argv)
 {
 	int i;
@@ -139,10 +86,16 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	if (!LoadFragFile("c:\\fragfile.dat", false))
+	{
+		Sys_PrintError("Failed to load fragfile.dat\n");
+		return 1;
+	}
+
 	for (i = 0; i < cmdargs.mvd_files_count; i++)
 	{
 		// Read the mvd demo file.
-		if (!ReadFile(cmdargs.mvd_files[i], &mvd_data, &mvd_len))
+		if (!COM_ReadFile(cmdargs.mvd_files[i], &mvd_data, &mvd_len))
 		{
 			Sys_PrintError("Failed to read %s.\n", cmdargs.mvd_files[i]);
 		}
