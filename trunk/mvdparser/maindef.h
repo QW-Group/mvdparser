@@ -11,6 +11,10 @@
 #define	MAX_SERVERINFO_STRING	512
 #define	MAX_LOCALINFO_STRING	32768
 
+#define	MAX_OSPATH				128		// max length of a filesystem pathname
+
+#define PLAYER_ISVALID(player) ((player).name && !(player).spectator)
+
 // Typedefs.
 typedef unsigned char byte;
 typedef float vec_t;
@@ -42,13 +46,19 @@ typedef struct sizebuf_s
 
 // Memory management.
 #define Q_free(ptr) if(ptr) { free(ptr); ptr = NULL; }
-void *Q_malloc (size_t size);
-void *Q_calloc (size_t n, size_t size);
-void *Q_realloc (void *p, size_t newsize);
-char *Q_strdup (const char *src);
+void *Q_malloc(size_t size);
+void *Q_calloc(size_t n, size_t size);
+void *Q_realloc(void *p, size_t newsize);
+char *Q_strdup(const char *src);
+float Q_atof(const char *str);
 
-void Sys_InitDoubleTime (void);
-double Sys_DoubleTime (void);
+#ifdef _WIN32
+#define strcasecmp(s1, s2)	_stricmp((s1), (s2))
+#define strncasecmp(s1, s2, n)	_strnicmp((s1), (s2), (n))
+#endif // _WIN32
+
+void Sys_InitDoubleTime(void);
+double Sys_DoubleTime(void);
 
 char *Sys_RedToWhite(char *txt);
 
@@ -58,5 +68,29 @@ void Sys_PrintError(char *format, ...);
 #define Sys_Error(format, ...) {Sys_PrintError(format, ##__VA_ARGS__); exit(1);}
 
 size_t strlcpy(char *dst, const char *src, size_t siz);
+
+// Append an extension to a path.
+void COM_ForceExtensionEx(char *path, char *extension, size_t path_size);
+
+qbool COM_ReadFile(char *filename, byte **data, long *filelen);
+
+#define MAX_COM_TOKEN	1024
+#define MAX_ARGS		80
+
+typedef struct tokenizecontext_s
+{
+	int		cmd_argc;						// Arguments count
+	char	*cmd_argv[MAX_ARGS];			// Links to argv_buf[]
+	char	argv_buf[MAX_COM_TOKEN];		// Here we store data for *cmd_argv[]
+	char	cmd_args[MAX_COM_TOKEN * 2];	// Here we store original of what we parse, from argv(1) to argv(argc() - 1)
+	char	text[MAX_COM_TOKEN];			// This is used/overwrite each time we using Cmd_MakeArgs()
+} tokenizecontext_t;
+
+// Parses the given string into command line tokens.
+void Cmd_TokenizeString(char *text);
+
+int Cmd_Argc(void);
+char *Cmd_Argv(int arg);
+char *Cmd_Args(void);
 
 #endif // __MAINDEF_H__
