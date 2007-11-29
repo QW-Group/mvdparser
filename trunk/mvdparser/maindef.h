@@ -13,7 +13,11 @@
 
 #define	MAX_OSPATH				128		// max length of a filesystem pathname
 
-#define PLAYER_ISVALID(player) ((player).name && !(player).spectator)
+#define PLAYER_ISVALID(player) ((player)->name && !(player)->spectator)
+
+#define clamp(a,b,c) (a = min(max(a, b), c))
+#define bound(a,b,c) ((a) >= (c) ? (a) : (b) < (a) ? (a) : (b) > (c) ? (c) : (b))
+#define Q_rint(x) ((x) > 0 ? (int) ((x) + 0.5) : (int) ((x) - 0.5))
 
 // Typedefs.
 typedef unsigned char byte;
@@ -67,7 +71,14 @@ void Sys_PrintDebug(int debuglevel, char *format, ...);
 void Sys_PrintError(char *format, ...);
 #define Sys_Error(format, ...) {Sys_PrintError(format, ##__VA_ARGS__); exit(1);}
 
+#if defined(__linux__) || defined(_WIN32)
 size_t strlcpy(char *dst, const char *src, size_t siz);
+#endif
+
+#ifdef _WIN32
+int snprintf(char *buffer, size_t count, char const *format, ...);
+int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
+#endif
 
 // Append an extension to a path.
 void COM_ForceExtensionEx(char *path, char *extension, size_t path_size);
@@ -92,5 +103,9 @@ void Cmd_TokenizeString(char *text);
 int Cmd_Argc(void);
 char *Cmd_Argv(int arg);
 char *Cmd_Args(void);
+
+unsigned long Com_HashKey(const char *str);
+
+char *va(char *format, ...);
 
 #endif // __MAINDEF_H__

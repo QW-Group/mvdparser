@@ -190,6 +190,29 @@ size_t strlcat(char *dst, const char *src, size_t siz)
 	return(dlen + (s - src));       /* count does not include NUL */
 }
 
+#ifdef _WIN32
+int snprintf(char *buffer, size_t count, char const *format, ...)
+{
+	int ret;
+	va_list argptr;
+	if (!count) return 0;
+	va_start(argptr, format);
+	ret = _vsnprintf(buffer, count, format, argptr);
+	buffer[count - 1] = 0;
+	va_end(argptr);
+	return ret;
+}
+
+int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr)
+{
+	int ret;
+	if (!count) return 0;
+	ret = _vsnprintf(buffer, count, format, argptr);
+	buffer[count - 1] = 0;
+	return ret;
+}
+#endif // _WIN32
+
 // Append an extension to a path.
 void COM_ForceExtensionEx(char *path, char *extension, size_t path_size)
 {
@@ -413,7 +436,7 @@ void Cmd_TokenizeStringEx(tokenizecontext_t *ctx, char *text)
 			return;
 
 		ctx->cmd_argv[ctx->cmd_argc] = ctx->argv_buf + idx;
-		strcpy (ctx->cmd_argv[ctx->cmd_argc], com_token);
+		strcpy(ctx->cmd_argv[ctx->cmd_argc], com_token);
 		ctx->cmd_argc++;
 
 		idx += token_len + 1;
@@ -546,5 +569,35 @@ float Q_atof(const char *str)
 	}
 
 	return val * sign;
+}
+
+unsigned long Com_HashKey(const char *str)
+{
+	unsigned long hash = 0;
+	int c;
+
+	// the (c&~32) makes it case-insensitive
+	// hash function known as sdbm, used in gawk
+	while ((c = *str++))
+        hash = (c &~ 32) + (hash << 6) + (hash << 16) - hash;
+
+    return hash;
+}
+
+char *va(char *format, ...)
+{
+	va_list argptr;
+	static char string[32][2048];
+	static int idx = 0;
+
+	idx++;
+	if (idx == 32)
+		idx = 0;
+
+	va_start(argptr, format);
+	vsnprintf(string[idx], sizeof(string[idx]), format, argptr);
+	va_end(argptr);
+
+	return string[idx];
 }
 
