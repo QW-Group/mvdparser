@@ -130,14 +130,14 @@ char *MSG_ReadString (void)
 
 		string[l] = c;
 		l++;
-	} while (l < sizeof(string)-1);
+	} while (l < sizeof(string) - 1);
 
 	string[l] = 0;
 
 	return string;
 }
 
-char *MSG_ReadStringLine (void)
+char *MSG_ReadStringLine(void)
 {
 	static char	string[2048];
 	unsigned int l;
