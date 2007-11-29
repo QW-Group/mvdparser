@@ -79,6 +79,7 @@ int main(int argc, char **argv)
 	long mvd_len = 0;
 
 	Sys_InitDoubleTime();
+	LogVarHashTable_Init();
 
 	if (!Cmdline_Parse(argc, argv))
 	{
