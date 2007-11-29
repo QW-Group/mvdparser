@@ -356,47 +356,44 @@ typedef struct frame_info_s
 	vec3_t		jumpinfo[32];
 } frame_info_t;
 
+#define MAX_SCOREBOARDNAME	16
+#define MAX_INFO_STRING		384
+
 typedef struct players_s
 {
-	#ifdef __CONSISTENCY_CHECK__
-	char	name[64];
-	char	userinfo[512];
-	char	team[64];
-	#else
-	char	*name;
-	char	*userinfo;
-	char	*team;
-	#endif
+	char	name[MAX_SCOREBOARDNAME];		// %name%
+	char	team[MAX_INFO_STRING];			// %team%
+	char	userinfo[MAX_INFO_STRING];		// %userinfo%
 
-	int		pnum;
-	int		frame;
-	int		userid;
-	int		frags;
-	qbool	spectator;
-	int		stats[MAX_CL_STATS];
-	float	pl;
+	int		pnum;							// %playernum%
+	int		frame;							// %frame%
+	int		userid;							// %userid%
+	int		frags;							// %frags%
+	qbool	spectator;						// %spectator%
+	int		stats[MAX_CL_STATS];			// %health% %armor% %activeweapon% %shells% %nails% %rockets% %cells% %quad% %pent% %ring% %sg% %ssg% %ng% %sng% %gl% %rl% %lg%
+	float	pl;								// %pl%
 	int		pl_count;
-	float	pl_average;
-	float	pl_highest;
-	float	pl_lowest;
-	float	ping;
+	float	pl_average;						// %avgpl%
+	float	pl_highest;						// %maxpl%
+	float	pl_lowest;						// %minpl%
+	float	ping;							// %ping%
 	int		ping_count;
-	float	ping_average;
-	float	ping_highest;
-	float	ping_lowest;
-	int		armor_count[3];
-	int		weapon_count[7];
-	int		weapon_drops[7];
-	int		weapon_shots[9];
-	
+	float	ping_average;					// %avgping%
+	float	ping_highest;					// %maxping%
+	float	ping_lowest;					// %minping%
+	int		armor_count[3];					// %gacount% %yacount% %racount%
+	int		weapon_count[7];				// %sgcount% %ssgcount% %ngcount% %sngcount% %glcount% %rlcount% %lgcount%
+	int		weapon_drops[7];				// %sgdrop% %ssgdrop% %ngdrop% %sngdrop% %gldrop% %rldrop% %lgdrop%
+	int		weapon_shots[9];				// %sgshots% %ssgshots% %ngshots% %sngshots% %glshots% %rlshots% %lgshots%
+
 	int		armor_took_flag;
 	float	weapon_time[7];
-	int		death_count;
-	int		megahealth_count;
+	int		death_count;					// %deaths%
+	int		megahealth_count;				// %mhcount%
 	
-	int		quad_count;
-	int		ring_count;
-	int		pent_count;
+	int		quad_count;						// %quadcount%
+	int		ring_count;						// %ringcount%
+	int		pent_count;						// %pentcount%
 
 	int		armor_wasted[3];
 	int		health_count[3];
@@ -406,15 +403,16 @@ typedef struct players_s
 	int		damage_armor[3];
 	int		weaponframe;
 	int		speed_frame_count;
-	float	acc_average_speed;
-	float	speed_highest;
-	vec3_t	origin;
-	vec3_t	viewangles;
+	float	acc_average_speed;				// %avgspeed%
+	float	speed_highest;					// %maxspeed%
+	vec3_t	origin;							// %posx% %posy% %posz%
+	vec3_t	viewangles;						// %pitch% %yaw% 
+	float	distance_moved;					// %distancemoved%
 
 	float	entertime;
 
-	int		topcolor;
-	int		bottomcolor;
+	int		topcolor;						// %topcolor%
+	int		bottomcolor;					// %bottomcolor%
 
 	qbool	teamkill_flag;
 } players_t;
@@ -442,12 +440,36 @@ typedef struct server_s
 	qbool    match_started;
 } server_t;
 
+typedef enum log_eventtype_s
+{
+	BASIC	= (1 << 0),
+	DEATH	= (1 << 1),	
+	SPAWN	= (1 << 2),
+	PICKUP	= (1 << 3),
+	MOVE	= (1 << 4)
+} log_eventtype_t;
+
+typedef struct log_event_s
+{
+	log_eventtype_t		type;
+	char				*message;
+	float				time;
+	struct log_event_s	*next;
+} log_event_t;
+
+typedef struct log_player_event_s
+{
+	log_event_t			super;
+	players_t			player;
+} log_player_event_t;
+
 typedef struct mvd_info_s
 {
 	byte			*demo_ptr;					// A pointer to the current position in the demo.
 	byte			*demo_start;				// A pointer to the start of the demo.
 	long			demo_size;					// The size of the demo in bytes.
 	float			demotime;					// The current time in the demo.
+	float			old_demotime;				// The demo time for the previous frame.
 	int				lastto;						// The player number/bitmask of the last player/players a demo message was directed at.
 	int				lasttype;					// The type of the last demo message.
 
@@ -459,6 +481,9 @@ typedef struct mvd_info_s
 	fragstats_t		fragstats[MAX_PLAYERS];
 	char			*sndlist[1024];
 	server_t		serverinfo;
+
+	log_event_t		*log_events_tail;
+	log_event_t		*log_events_head;
 } mvd_info_t;
 
 // usercmd button bits

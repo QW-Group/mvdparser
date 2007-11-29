@@ -536,6 +536,7 @@ static void NetMsg_Parser_Parse_svc_updatefrags(mvd_info_t *mvd)
 
 static void NetMsg_Parser_Parse_svc_stopsound(void)
 {
+	MSG_ReadShort();
 }
 
 static void NetMsg_Parser_Parse_svc_damage(void)
@@ -740,22 +741,19 @@ static void NetMsg_Parser_Parse_svc_updateuserinfo(mvd_info_t *mvd)
 	}
 
 	// Update the userinfo.
-	Q_free(mvd->players[pnum].userinfo);
-	player->userinfo = Q_strdup(userinfo);
+	strlcpy(player->userinfo, userinfo, sizeof(player->userinfo));
 
 	// Parse the userinfo.
 	{
 		// Name.
-		Q_free(player->name);
-		player->name = Q_strdup(Info_ValueForKey(player->userinfo, "name"));
+		strlcpy(player->name, Info_ValueForKey(player->userinfo, "name"), sizeof(player->name));
 
 		// Color.
 		player->topcolor	= atoi(Info_ValueForKey(player->userinfo, "topcolor"));
 		player->bottomcolor	= atoi(Info_ValueForKey(player->userinfo, "bottomcolor"));
 		
 		// Team.
-		Q_free(player->team);
-		player->team = Q_strdup(Info_ValueForKey(player->userinfo, "team"));
+		strlcpy(player->team, Info_ValueForKey(player->userinfo, "team"), sizeof(player->team));
 
 		// Spectator.
 		player->spectator = (qbool)(Info_ValueForKey(player->userinfo, "*spectator")[0]);
@@ -898,15 +896,14 @@ static void NetMsg_Parser_Parse_svc_setinfo(mvd_info_t *mvd)
 	int pnum	= MSG_ReadByte();
 	char *key	= MSG_ReadString();
 	char *value = MSG_ReadString();
+	players_t *player = &mvd->players[pnum];
 
-	Sys_PrintDebug(2, "svc_setinfo: player: %i name: %s key: \"%s\" value \"%s\"\n", pnum, mvd->players[pnum].name, key, value);
+	Sys_PrintDebug(2, "svc_setinfo: player: %i name: %s key: \"%s\" value \"%s\"\n", pnum, player->name, key, value);
 	
 	if (!strcmp(key, "name"))
 	{
-		Sys_PrintDebug(1, "svc_setinfo: Player %i renamed from %s to %s\n", pnum, mvd->players[pnum].name, value);
-		
-		Q_free(mvd->players[pnum].name);
-		mvd->players[pnum].name = Q_strdup(value);
+		Sys_PrintDebug(1, "svc_setinfo: Player %i renamed from %s to %s\n", pnum, player->name, value);
+		strlcpy(player->name, value, sizeof(player->name));
 	}
 }
 
@@ -1026,6 +1023,7 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			}
 			case svc_disconnect :
 			{
+				LogVarHashTable_Test(mvd);
 				Sys_PrintDebug(1, "NetMsg_Parser_StartParse: Disconnected\n");
 				return true;
 			}
@@ -1153,6 +1151,11 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			case svc_sound :
 			{
 				NetMsg_Parser_Parse_svc_sound(mvd);
+				break;
+			}
+			case svc_stopsound :
+			{
+				NetMsg_Parser_Parse_svc_stopsound();
 				break;
 			}
 			case svc_temp_entity :
