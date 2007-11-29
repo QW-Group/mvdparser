@@ -230,7 +230,7 @@ qbool LoadFragFile(char *filename, qbool quiet)
 	strlcpy(fragfilename, filename, sizeof(fragfilename));
 	COM_ForceExtensionEx(fragfilename, ".dat", sizeof(fragfilename));
 
-	if (!COM_ReadFile(fragfilename, &buffer,  NULL) || !buffer)
+	if (!COM_ReadFile(fragfilename, &buffer, NULL) || !buffer)
 	{
 		if (!quiet)
 			Sys_Error("Couldn't load fragfile \"%s\"\n", fragfilename);
@@ -607,7 +607,7 @@ void Frags_Parse(mvd_info_t *mvd, char *fragmessage, int level)
 
 	for (i = 0; i < MAX_PLAYERS; i++)
 	{
-		if (!PLAYER_ISVALID(mvd->players[i]))
+		if (!PLAYER_ISVALID(&mvd->players[i]))
 		{
 			 continue;
 		}
@@ -652,20 +652,75 @@ void Frags_Parse(mvd_info_t *mvd, char *fragmessage, int level)
 
 	switch (mess->type)
 	{
-		case mt_death:
+		case mt_death :
 		{
 			Sys_PrintDebug(3, "Frags_Parse: %s was killed by %s\n", p1->name, wclasses[mess->wclass_index].name);
 			mvd->fragstats[p1->pnum].wdeaths[mess->wclass_index]++;
 
 			break;
 		}
-		case mt_fragged:
-		case mt_frags:
+		case mt_suicide :
+		{
+			mvd->fragstats[p1->pnum].suicides++;
+			break;
+		}
+		case mt_fragged :
+		case mt_frags :
 		{
 			players_t *killer = (mess->type == mt_fragged) ? p2 : p1;
 			players_t *victim = (mess->type == mt_fragged) ? p1 : p2;
 
 			Sys_PrintDebug(3, "Frags_Parse: %s killed %s with %s\n", killer->name, victim->name, wclasses[mess->wclass_index].name);
+			break;
+		}
+		case mt_frag :
+		{
+			mvd->fragstats[p1->pnum].wkills[mess->wclass_index]++;
+			break;
+		}
+		case mt_tkilled :
+        case mt_tkills :
+		{
+			players_t *killer = (mess->type == mt_tkilled) ? p2 : p1;
+			players_t *victim = (mess->type == mt_tkilled) ? p1 : p2;
+
+			mvd->fragstats[killer->pnum].tkills[victim->pnum]++;
+			mvd->fragstats[victim->pnum].tdeaths[killer->pnum]++;
+			mvd->fragstats[killer->pnum].total_frags--;
+
+			if (mess->type == mt_tkilled)
+			{
+				Sys_PrintDebug(3, "Frags_Parse: %s teamkilled %s.\n", killer->name, victim->name);
+			}
+			else
+			{
+				Sys_PrintDebug(3, "Frags_Parse: %s got teamkilled.\n", killer->name, victim->name);
+			}
+
+			break;
+		}
+		case mt_tkill:
+		{
+			mvd->fragstats[p1->pnum].teamkills++;
+			p1->teamkill_flag = true;
+			break;
+		}
+		case mt_flagtouch:
+		{
+			mvd->fragstats[p1->pnum].flag_touches++;
+			Sys_PrintDebug(3, "Frags_Parse: %s touched flag\n", p1->name);
+			break;
+		}
+		case mt_flagdrop:
+		{		
+			mvd->fragstats[p1->pnum].flag_dropped++;
+			Sys_PrintDebug(3, "Frags_Parse: %s dropped flag\n", p1->name);
+			break;
+		}
+		case mt_flagcap:
+		{
+			mvd->fragstats[p1->pnum].flag_captured++;
+			Sys_PrintDebug(3, "Frags_Parse: %s captured flag\n", p1->name);
 			break;
 		}
 	}
