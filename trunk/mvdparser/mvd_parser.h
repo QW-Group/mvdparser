@@ -9,4 +9,6 @@
 //
 qbool MVD_Parser_StartParse(byte *mvdbuf, long filelen);
 
+void LogVarHashTable_Init(void);
+
 #endif // __MVD_PARSER_H__
