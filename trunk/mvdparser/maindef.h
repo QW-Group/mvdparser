@@ -2,7 +2,7 @@
 #ifndef __MAINDEF_H__
 #define __MAINDEF_H__
 
-#include "stdlib.h"
+#include <stdlib.h>
 
 #define MAX_PLAYERS				32
 
@@ -11,7 +11,8 @@
 #define	MAX_SERVERINFO_STRING	512
 #define	MAX_LOCALINFO_STRING	32768
 
-#define	MAX_OSPATH				128		// max length of a filesystem pathname
+#define	MAX_QPATH			64		// max length of a quake game pathname
+#define	MAX_OSPATH			128		// max length of a filesystem pathname
 
 #define PLAYER_ISVALID(player) ((player)->name && !(player)->spectator)
 
@@ -77,7 +78,7 @@ size_t strlcpy(char *dst, const char *src, size_t siz);
 
 #ifdef _WIN32
 int snprintf(char *buffer, size_t count, char const *format, ...);
-int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
+//int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
 #endif
 
 // Append an extension to a path.
