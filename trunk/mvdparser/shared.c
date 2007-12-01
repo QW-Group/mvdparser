@@ -44,7 +44,7 @@ void *Q_realloc (void *p, size_t newsize)
 
 char *Q_strdup (const char *src)
 {
-	char *p = strdup(src);
+	char *p = _strdup(src);
 
 	if (!p)
 		Sys_Error ("Q_strdup: Not enough memory free; check disk space\n");
@@ -203,6 +203,7 @@ int snprintf(char *buffer, size_t count, char const *format, ...)
 	return ret;
 }
 
+/*
 int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr)
 {
 	int ret;
@@ -211,6 +212,7 @@ int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr)
 	buffer[count - 1] = 0;
 	return ret;
 }
+*/
 #endif // _WIN32
 
 // Append an extension to a path.
@@ -539,7 +541,7 @@ float Q_atof(const char *str)
 
 	// check for character
 	if (str[0] == '\'')
-		return sign * str[1];
+		return (float)(sign * str[1]);
 
 	// assume decimal
 	decimal = -1;
