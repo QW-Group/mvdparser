@@ -210,7 +210,6 @@ static void InitFragDefs(void)
 
 qbool LoadFragFile(char *filename, qbool quiet)
 {
-	int lowmark;
 	int c;
 	int line;
 	int i;
@@ -226,7 +225,6 @@ qbool LoadFragFile(char *filename, qbool quiet)
 
 	InitFragDefs();
 
-	//lowmark = Hunk_LowMark();
 	strlcpy(fragfilename, filename, sizeof(fragfilename));
 	COM_ForceExtensionEx(fragfilename, ".dat", sizeof(fragfilename));
 
@@ -557,7 +555,6 @@ nextline:
 	}
 
 finish:
-	//Hunk_FreeToLowMark(lowmark);
 	Q_free(buffer);
 	return true;
 }
