@@ -433,11 +433,43 @@ typedef struct fragstats_s
 	int		teamkills;
 } fragstats_t ;
 
+typedef struct movevars_s
+{
+	float	gravity;
+	float	stopspeed;
+	float	maxspeed;
+	float	spectatormaxspeed;
+	float	accelerate;
+	float	airaccelerate;
+	float	wateraccelerate;
+	float	friction;
+	float	waterfriction;
+	float	entgravity;
+	float	bunnyspeedcap;
+	float	ktjump;
+} movevars_t;
+
 typedef struct server_s
 {
-	char    *serverinfo;
-	qbool    countdown;
-	qbool    match_started;
+	char		serverinfo[MAX_SERVERINFO_STRING];
+	int			protocol_version;
+	int			servercount;
+	float		demotime;
+	int			timelimit;
+	int			fraglimit;
+	int			teamplay;
+	int			deathmatch;
+	qbool		watervis;
+	char		serverversion[MAX_INFO_KEY];
+	int			maxclients;
+	int			maxspectators;
+	char		mapname[MAX_INFO_KEY];
+	int			fpd;
+	char		status[MAX_INFO_KEY];
+	char		gamedir[MAX_QPATH];
+	movevars_t	movevars;
+	qbool		countdown;
+	qbool		match_started;
 } server_t;
 
 typedef enum log_eventtype_s
@@ -465,10 +497,12 @@ typedef struct log_player_event_s
 
 typedef struct mvd_info_s
 {
+	char			*demo_name;					// The name of the demo on disk, excluding path.
 	byte			*demo_ptr;					// A pointer to the current position in the demo.
 	byte			*demo_start;				// A pointer to the start of the demo.
 	long			demo_size;					// The size of the demo in bytes.
 	float			demotime;					// The current time in the demo.
+	float			match_start_demotime;		// Time of match start.
 	float			old_demotime;				// The demo time for the previous frame.
 	int				lastto;						// The player number/bitmask of the last player/players a demo message was directed at.
 	int				lasttype;					// The type of the last demo message.
@@ -481,6 +515,13 @@ typedef struct mvd_info_s
 	fragstats_t		fragstats[MAX_PLAYERS];
 	char			*sndlist[1024];
 	server_t		serverinfo;
+
+	int				match_start_date;
+	int				match_start_month;
+	int				match_start_year;
+	int				match_start_hour;
+	int				match_start_minute;
+	char			match_timezone[8];
 
 	log_event_t		*log_events_tail;
 	log_event_t		*log_events_head;
