@@ -7,7 +7,7 @@
 // mvdbuf = The demo buffer to read from.
 // filelen = The length of the demo in bytes.
 //
-qbool MVD_Parser_StartParse(byte *mvdbuf, long filelen);
+qbool MVD_Parser_StartParse(char *demoname, byte *mvdbuf, long filelen);
 
 void LogVarHashTable_Init(void);
 
