@@ -116,7 +116,7 @@ char *MSG_ReadString (void)
 {
 	static char string[2048];
 	unsigned int l;
-	int c;
+	char c;
 
 	l = 0;
 	do {
