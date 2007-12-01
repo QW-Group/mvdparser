@@ -4,39 +4,110 @@
 #include "logger.h"
 
 #define LOG_OUTPUTFILES_HASHTABLE_SIZE	512
+#define LOG_MAX_ID_LENGTH				32
 
-typedef struct log_outputfile_instance_s
+typedef struct log_outputfile_s
 {
-	char	*filename;
-	FILE	*file;
-	long	filename_hash;
-	struct log_outputfile_instance_s *next;
+	char					*filename;		// Expanded filename.
+	FILE					*file;			// The file pointer to the opened file.
+	long					filename_hash;	// A hash of the expanded filename.
+	struct log_outputfile_s	*next;			// Pointer to the next outputfile (if there's a collision in the hash table).
 } log_outputfile_t; 
 
-typedef struct log_outputfile_template_s
+typedef enum log_eventlogger_type_s
 {
-	char 	*name_format_string;
-} log_outputfile_template_t;
+	DEATH,
+	MOVE,
+	MATCHSTART,
+	MATCHEND,
+	DEMOSTART,
+	DEMOEND,
+	SPAWN,
+	ITEMPICKUP
+} log_eventlogger_type_t;
 
 typedef struct log_eventlogger_s
 {
-	int			id;
-	char 			*output_format_string;
-	log_outputfile_t	outputfiles[10];
+	int							id;							// The unique ID for the event logger.
+	log_eventlogger_type_t		type;						// The type of events this logger logs.
+	char 						*output_template_string;	// A string containing the template used when outputting data to the outputfiles.
+	log_outputfile_template_t	outputfile_templates[];		// The output file templates associated with this event.
 } log_eventlogger_t;
+
+typedef struct log_outputfile_template_s
+{
+	char	id[LOG_MAX_ID_LENGTH];
+	char	*name;
+	struct log_outputfile_template_s *next;
+} log_outputfile_template_t;
 
 typedef struct logger_s
 {
-	log_outputfile_t	 	output_hashtable[LOG_OUTPUTFILES_HASHTABLE_SIZE]; // Table of opened output files.
-	log_outputfile_template_t	*output_file_templates;
+	log_outputfile_t			output_hashtable[LOG_OUTPUTFILES_HASHTABLE_SIZE];	// Table of opened output files.
 	
+	log_outputfile_template_t	*output_file_templates[];							// Non-expanded file names, such as %playernum%.log
+	int							output_file_template_count;							// The number of output file templates.
+	
+	log_eventlogger_t			*event_loggers[];									// Event loggers that outputs the log data to file(s).
+	int							event_logger_count;									// The number of event loggers.
 } logger_t;
 
 //Log_AddEventLoggerOutput(int eventlogger_id,
 
-void Log_AddOutputFileTemplate(logger_t logger, char *output_file_template)
+void Log_ParseOutputTemplates(logger_t logger, const char *template_file)
 {
+	// TODO : Read the contents of the template file.
+
+	// TODO : Strip all comments.
+
+	// TODO : Count the number of event loggers and allocate memory for them in the logger struct. (#EVENT)
+
+	// TODO : Count the number of output file templates and allocate memory from them in the logger struct. (#FILE)
+
+	// TODO : Loop and do:
+		// TODO : Tokenize the current line.
+	
+		// TODO : If // skip to end of line
+	
+		// TODO : If #FILE 
+			// TODO : Allocate memory for the template
+			// TODO : Save 1st arg as the template ID
+			// TODO : Save 2nd arg as template name
+			// TODO : Add the template to the array of output file templates
+
+		// TODO : If #EVENT
+			// TODO : Allocate memory for an eventlogger
+			// TODO : 1st arg = event type
+			// TODO : 2nd arg = id
+			// TODO : From the next line, read everything and save it as a string until an #EVENT_END token is found
+			// TODO : Add the event logger to the list of event loggers
+		
+		// TODO : If #OUTPUT
+			// TODO : Read 1st arg which is the ID of the event logger
+			// TODO : Read 2nd arg the file template ID
+			// TODO : Find the file template with the specified ID
+			// TODO : Find the event logger with the found ID
+				// TODO : Add the file template to the linked list of templates in the event logger.
 }
+
+static char *Log_ExpandTemplateString(logger_t *logger, mvd_info_t *mvd, const char *template_string, int player_num)
+{
+	// TODO : Expand the string by going through it and resolving any variables in it.
+}
+
+void Log_Event(logger_t *logger, log_eventlogger_type_t type, int player_num)
+{
+	// TODO : Find all event loggers that has the type specified.
+		// TODO : Expand the event loggers template string into an output string.
+		// TODO : Loop through and expand the filename template strings.
+			// TODO : Search for the expanded filename in the output_hashtable
+				// TODO : If found, write the output string to the file
+				// TODO : else open the file first
+}
+
+// ============================================================================
+//								Log variables
+// ============================================================================
 
 static char *LogVar_name(mvd_info_t *mvd, const char *varname, int player_num)
 {
