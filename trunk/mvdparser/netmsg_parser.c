@@ -428,27 +428,29 @@ static void NetMsg_Parser_Parse_svc_sound(mvd_info_t *mvd)
 	}
 
 	// Only parse sounds when match has started.
-	if (mvd->serverinfo.match_started)
+	if (mvd->serverinfo.match_started && mvd->sndlist[soundnum])
 	{
+		// TODO : Hrm, why would a sound that's played not be in the soundlist?!?
+
 		if (!strcmp("items/r_item1.wav", mvd->sndlist[soundnum]))
 		{
 			fi->healthinfo[fi->healthcount].type = 1;
 			VectorCopy(loc, fi->healthinfo[fi->healthcount].origin);
 			fi->healthcount++;
 		}
-		if (!strcmp("items/health1.wav", mvd->sndlist[soundnum]))
+		else if (!strcmp("items/health1.wav", mvd->sndlist[soundnum]))
 		{
 			fi->healthinfo[fi->healthcount].type = 2;
 			VectorCopy(loc, fi->healthinfo[fi->healthcount].origin);
 			fi->healthcount++;
 		}
-		if (!strcmp("items/r_item2.wav", mvd->sndlist[soundnum]))
+		else if (!strcmp("items/r_item2.wav", mvd->sndlist[soundnum]))
 		{
 			fi->healthinfo[fi->healthcount].type = 3;
 			VectorCopy(loc, fi->healthinfo[fi->healthcount].origin);
 			fi->healthcount++;
 		}
-		if (!strcmp("player/plyrjmp8.wav", mvd->sndlist[soundnum]))
+		else if (!strcmp("player/plyrjmp8.wav", mvd->sndlist[soundnum]))
 		{
 			VectorCopy(loc, fi->jumpinfo[fi->jumpcount]);
 			fi->jumpcount++;
@@ -477,14 +479,29 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 	}
 }
 
+static void NetMsg_Parser_ParseServerInfo(mvd_info_t *mvd)
+{
+	mvd->serverinfo.deathmatch		= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "deathmatch"));
+	mvd->serverinfo.fpd				= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "fpd"));
+	mvd->serverinfo.fraglimit		= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "fraglimit"));
+	mvd->serverinfo.timelimit		= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "timelimit"));
+	mvd->serverinfo.teamplay		= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "teamplay"));
+	mvd->serverinfo.maxclients		= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "maxclients"));
+	mvd->serverinfo.maxspectators	= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "maxspectators"));
+
+	strlcpy(mvd->serverinfo.deathmatch, Info_ValueForKey(mvd->serverinfo.serverinfo, "deathmatch"), sizeof(mvd->serverinfo.deathmatch));
+	strlcpy(mvd->serverinfo.serverversion, Info_ValueForKey(mvd->serverinfo.serverinfo, "*version"), sizeof(mvd->serverinfo.serverversion));
+	strlcpy(mvd->serverinfo.status, Info_ValueForKey(mvd->serverinfo.serverinfo, "status"), sizeof(mvd->serverinfo.status));
+}
+
 static void NetMsg_Parser_Parse_svc_stufftext(mvd_info_t *mvd)
 {
 	char *stufftext = MSG_ReadString();
 
 	if (strstr(stufftext, "fullserverinfo"))
 	{
-		Q_free(mvd->serverinfo.serverinfo);
-		mvd->serverinfo.serverinfo = Q_strdup(stufftext);
+		strlcpy(mvd->serverinfo.serverinfo, stufftext, sizeof(mvd->serverinfo.serverinfo));
+		NetMsg_Parser_ParseServerInfo(mvd);
 	}
 }
 
@@ -500,26 +517,47 @@ static void NetMsg_Parser_Parse_svc_setangle(void)
 	}
 }
 
-static void NetMsg_Parser_Parse_svc_serverdata(void)
+static void NetMsg_Parser_Parse_svc_serverdata(mvd_info_t *mvd)
 {
-	int i = 0;
-	int protover	= MSG_ReadLong();
-	int servercount = MSG_ReadLong();
-	char *gamedir	= MSG_ReadString();
-	float demotime	= MSG_ReadFloat();
-	char *levelname = MSG_ReadString();
+	mvd->serverinfo.protocol_version	= MSG_ReadLong();
+	mvd->serverinfo.servercount			= MSG_ReadLong();
+
+	// Gamedir.
+	strlcpy(mvd->serverinfo.gamedir, MSG_ReadString(), sizeof(mvd->serverinfo.gamedir));
+	
+	mvd->serverinfo.demotime = MSG_ReadFloat();
+
+	// Map name.
+	strlcpy(mvd->serverinfo.mapname, MSG_ReadString(), sizeof(mvd->serverinfo.mapname));
+
+	// Movement vars.
+	mvd->serverinfo.movevars.gravity			= MSG_ReadFloat();
+	mvd->serverinfo.movevars.stopspeed          = MSG_ReadFloat();
+	mvd->serverinfo.movevars.maxspeed			= MSG_ReadFloat();
+	mvd->serverinfo.movevars.spectatormaxspeed  = MSG_ReadFloat();
+	mvd->serverinfo.movevars.accelerate         = MSG_ReadFloat();
+	mvd->serverinfo.movevars.airaccelerate      = MSG_ReadFloat();
+	mvd->serverinfo.movevars.wateraccelerate    = MSG_ReadFloat();
+	mvd->serverinfo.movevars.friction           = MSG_ReadFloat();
+	mvd->serverinfo.movevars.waterfriction      = MSG_ReadFloat();
+	mvd->serverinfo.movevars.entgravity	        = MSG_ReadFloat();
 
 	Sys_PrintDebug(1, "sys_serverdata:\n");
-	Sys_PrintDebug(1, "Protocol version: %i\n", protover);
-	Sys_PrintDebug(1, "Servercount: %i\n", servercount);
-	Sys_PrintDebug(1, "Gamedir: %s\n", gamedir);
-	Sys_PrintDebug(1, "Demotime: %f\n", demotime);
-	Sys_PrintDebug(1, "Levelname: %s\n", levelname);
-
-	for (i = 0; i < 10; i++)
-	{
-		MSG_ReadFloat(); // Move var.
-	}
+	Sys_PrintDebug(1, "Protocol version: %i\n", mvd->serverinfo.protocol_version);
+	Sys_PrintDebug(1, "Servercount: %i\n", mvd->serverinfo.servercount);
+	Sys_PrintDebug(1, "Gamedir: %s\n", mvd->serverinfo.gamedir);
+	Sys_PrintDebug(1, "Demotime: %g\n", mvd->serverinfo.demotime);
+	Sys_PrintDebug(1, "Levelname: %s\n", mvd->serverinfo.mapname);
+	Sys_PrintDebug(1, "Gravity: %s\n", mvd->serverinfo.movevars.gravity);
+	Sys_PrintDebug(1, "Stopspeed: %s\n", mvd->serverinfo.movevars.stopspeed);
+	Sys_PrintDebug(1, "Maxspeed: %s\n", mvd->serverinfo.movevars.maxspeed);
+	Sys_PrintDebug(1, "Spectator max speed: %s\n", mvd->serverinfo.movevars.spectatormaxspeed);
+	Sys_PrintDebug(1, "Accelerate: %s\n", mvd->serverinfo.movevars.spectatormaxspeed);
+	Sys_PrintDebug(1, "Air accelerate: %s\n", mvd->serverinfo.movevars.airaccelerate);
+	Sys_PrintDebug(1, "Water accelerate: %s\n", mvd->serverinfo.movevars.wateraccelerate);
+	Sys_PrintDebug(1, "Friction: %s\n", mvd->serverinfo.movevars.friction);
+	Sys_PrintDebug(1, "Water friction: %s\n", mvd->serverinfo.movevars.waterfriction);
+	Sys_PrintDebug(1, "Entity gravity: %s\n", mvd->serverinfo.movevars.entgravity);
 }
 
 static void NetMsg_Parser_Parse_svc_lightstyle(void)
@@ -865,7 +903,7 @@ static void NetMsg_Parser_Parse_svc_soundlist(mvd_info_t *mvd)
 
 		Sys_PrintDebug(3, "sound %i: %s\n", soundindex, soundname);
 
-		mvd->sndlist[soundindex] = Q_strdup(soundname);
+		mvd->sndlist[soundindex] = Q_strdup(soundname); // TODO : Make sure we free these.
 		soundindex++;
 	}
 
@@ -909,14 +947,18 @@ static void NetMsg_Parser_Parse_svc_setinfo(mvd_info_t *mvd)
 
 static void NetMsg_Parser_Parse_svc_serverinfo(mvd_info_t *mvd)
 {
-	char *key = MSG_ReadString();
-	char *value = MSG_ReadString();
+	char key[MAX_INFO_KEY];
+	char value[MAX_INFO_STRING];
+
+	strlcpy(key, MSG_ReadString(), sizeof(key));
+	strlcpy(value, MSG_ReadString(), sizeof(value));
 
 	if (!strcmp(key, "status") && strcmp(value, "Countdown"))
 	{
 		// TODO : Do a better check here maybe?
 		// If the status is not countdown, the match has started.
 		mvd->serverinfo.match_started = true;
+		mvd->match_start_demotime = mvd->demotime;
 	}
 }
 
@@ -1055,7 +1097,7 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			}
 			case svc_serverdata :
 			{
-				NetMsg_Parser_Parse_svc_serverdata();
+				NetMsg_Parser_Parse_svc_serverdata(mvd);
 				break;
 			}
 			case svc_cdtrack :
