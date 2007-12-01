@@ -489,7 +489,7 @@ static void NetMsg_Parser_ParseServerInfo(mvd_info_t *mvd)
 	mvd->serverinfo.maxclients		= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "maxclients"));
 	mvd->serverinfo.maxspectators	= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "maxspectators"));
 
-	strlcpy(mvd->serverinfo.deathmatch, Info_ValueForKey(mvd->serverinfo.serverinfo, "deathmatch"), sizeof(mvd->serverinfo.deathmatch));
+	strlcpy(mvd->serverinfo.mapname, Info_ValueForKey(mvd->serverinfo.serverinfo, "map"), sizeof(mvd->serverinfo.mapname));
 	strlcpy(mvd->serverinfo.serverversion, Info_ValueForKey(mvd->serverinfo.serverinfo, "*version"), sizeof(mvd->serverinfo.serverversion));
 	strlcpy(mvd->serverinfo.status, Info_ValueForKey(mvd->serverinfo.serverinfo, "status"), sizeof(mvd->serverinfo.status));
 }
