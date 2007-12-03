@@ -4,6 +4,8 @@
 #include "qw_protocol.h"
 #include "logger.h"
 
+char *LogVarValueAsString(mvd_info_t *mvd, const char *varname, int player_num);
+
 #define LOG_CHECK_NUMARGS(num)																						\
 {																													\
 	if (arg_count != num)																							\
@@ -66,6 +68,8 @@ static log_eventlogger_type_t Log_ParseEventloggerType(const char *event_logger_
 	{
 		return LOG_ITEMPICKUP;
 	}
+
+	return LOG_UNKNOWN;
 }
 
 static qbool Log_TokenizeNextLine(char **t_line_start, char **t_line_end)
@@ -137,7 +141,7 @@ void Log_ClearLogger(logger_t *logger)
 
 qbool Log_ParseOutputTemplates(logger_t *logger, const char *template_file)
 {
-	#define LOG_NEXTLINE() { if (!(*line_end)) break; line_start = line_end + 1; continue; } 
+	#define LOG_NEXTLINE() { if (!(*line_end)) break; line_start = (line_end + 1); continue; } 
 
 	int eventlogger_count	= 0;
 	int file_template_count	= 0;
@@ -236,7 +240,7 @@ qbool Log_ParseOutputTemplates(logger_t *logger, const char *template_file)
 			// From the next line, read everything and save it as a string until an #EVENT_END token is found.
 			{
 				#define EVENT_END_STR "#EVENT_END"
-				int event_end_len = strlen(EVENT_END_STR);
+				size_t event_end_len = strlen(EVENT_END_STR);
 				line_start = line_end + 1;
 
 				for (line_end = line_start; *line_end; line_end++)
@@ -343,9 +347,93 @@ qbool Log_ParseOutputTemplates(logger_t *logger, const char *template_file)
 	return true;
 }
 
-static char *Log_ExpandTemplateString(logger_t *logger, mvd_info_t *mvd, const char *template_string, int player_num)
+char *Log_ExpandTemplateString(logger_t *logger, mvd_info_t *mvd, const char *template_string, int player_num)
 {
-	// TODO : Expand the string by going through it and resolving any variables in it.
+	char var_value[1024];
+	char tmp[1024];
+	int expand_count	= 0;
+	char *vv			= NULL;
+	char *var_start		= NULL;
+	char *var_end		= NULL;
+	char *input			= NULL;
+	char *output		= NULL;
+	size_t template_len	= strlen(template_string) * 3;
+
+	//strlcpy(template_str, template_string, sizeof(template_str));
+	input = template_string;
+
+	// Expand the string by going through it and resolving any variables in it.
+	if ((int)template_len > logger->expand_buf_size)
+	{
+		logger->expand_buf_size = (int)template_len;
+		logger->expand_buf = (char *)Q_realloc(logger->expand_buf, logger->expand_buf_size);
+	}
+
+	output = logger->expand_buf;
+
+	while (*input && (expand_count < logger->expand_buf_size))
+	{
+		// We found a variable name.
+		if (*input == '%')
+		{
+			input++;
+			
+			// Only look vor a var name if it's not zero length.
+			if (*input != '%')
+			{
+				var_start = input;
+
+				// Find the end of the variable name.
+				while (*input && (*input != '%'))
+				{
+					input++;
+				}
+
+				var_end = input;
+
+				// No end %, incorrect template.
+				if (*var_end != '%')
+				{
+					Sys_Error("Log_ExpandTemplateString: Incorrectly terminated var.\n");
+				}
+
+				// Expand the variable based on the current mvd context / player.
+				snprintf(tmp, min((var_end - var_start) + 1, sizeof(tmp)), "%s", var_start);
+				strlcpy(var_value, LogVarValueAsString(mvd, tmp, player_num), sizeof(var_value));
+
+				// Add the value to the output string.
+				vv = var_value;
+
+				while (*vv && (expand_count < logger->expand_buf_size))
+				{
+					*output = *vv;
+					expand_count++;
+
+					output++;
+					vv++;
+				}
+			}
+		}
+
+		// Keep count on how many chars we have expanded so that we don't go past the bounds of the array.
+		expand_count++;
+
+		if (expand_count >= logger->expand_buf_size)
+		{
+			logger->expand_buf_size *= 2;
+			logger->expand_buf = (char *)Q_realloc(logger->expand_buf, logger->expand_buf_size);
+			output = logger->expand_buf;
+		}
+
+		*output = *input;
+
+		output++;
+		input++;
+	}
+
+	*output = 0;
+
+	return logger->expand_buf;
 }
 
 void Log_Event(logger_t *logger, log_eventlogger_type_t type, int player_num)
@@ -984,7 +1072,7 @@ void LogVarHashTable_AddValue(logvar_t **hashtable, logvar_t *logvar)
 	}
 }
 
-const char *LogVarValueAsString(mvd_info_t *mvd, const char *varname, int player_num)
+char *LogVarValueAsString(mvd_info_t *mvd, const char *varname, int player_num)
 {
 	logvar_t *logvar = LogVarHashTable_GetValue(logvar_hashtable, varname);
 

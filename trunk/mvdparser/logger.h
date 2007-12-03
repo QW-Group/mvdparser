@@ -15,7 +15,7 @@ typedef struct log_outputfile_s
 
 typedef enum log_eventlogger_type_s
 {
-	UNKNOWN,
+	LOG_UNKNOWN,
 	LOG_DEATH,
 	LOG_MOVE,
 	LOG_MATCHSTART,
@@ -51,6 +51,9 @@ typedef struct logger_s
 	
 	log_eventlogger_t			**event_loggers;									// Event loggers that outputs the log data to file(s).
 	int							event_logger_count;									// The number of event loggers.
+
+	char						*expand_buf;										// Buffer used for expanding template strings.
+	int							expand_buf_size;									// The size of the expand buffer.
 } logger_t;
 
 void Log_ClearLogger(logger_t *logger);
