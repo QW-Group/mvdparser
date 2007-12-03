@@ -1,93 +1,346 @@
 #include <stdio.h>
+#include <string.h>
 #include "maindef.h"
 #include "qw_protocol.h"
 #include "logger.h"
 
-#define LOG_OUTPUTFILES_HASHTABLE_SIZE	512
-#define LOG_MAX_ID_LENGTH				32
+#define LOG_CHECK_NUMARGS(num)																						\
+{																													\
+	if (arg_count != num)																							\
+	{																												\
+		Sys_PrintError("Output templates parsing: %i tokens expected %i found (line %i)\n", num, arg_count, line);	\
+		line_start = line_end + 1;																					\
+		continue;																									\
+	}																												\
+}
 
-typedef struct log_outputfile_s
+static void Log_ParseFileLine(logger_t *logger, int line)
 {
-	char					*filename;		// Expanded filename.
-	FILE					*file;			// The file pointer to the opened file.
-	long					filename_hash;	// A hash of the expanded filename.
-	struct log_outputfile_s	*next;			// Pointer to the next outputfile (if there's a collision in the hash table).
-} log_outputfile_t; 
+	// Allocate memory for the template.
+	log_outputfile_template_t *output_template = Q_calloc(1, sizeof(log_outputfile_template_t));
 
-typedef enum log_eventlogger_type_s
-{
-	DEATH,
-	MOVE,
-	MATCHSTART,
-	MATCHEND,
-	DEMOSTART,
-	DEMOEND,
-	SPAWN,
-	ITEMPICKUP
-} log_eventlogger_type_t;
-
-typedef struct log_eventlogger_s
-{
-	int							id;							// The unique ID for the event logger.
-	log_eventlogger_type_t		type;						// The type of events this logger logs.
-	char 						*output_template_string;	// A string containing the template used when outputting data to the outputfiles.
-	log_outputfile_template_t	outputfile_templates[];		// The output file templates associated with this event.
-} log_eventlogger_t;
-
-typedef struct log_outputfile_template_s
-{
-	char	id[LOG_MAX_ID_LENGTH];
-	char	*name;
-	struct log_outputfile_template_s *next;
-} log_outputfile_template_t;
-
-typedef struct logger_s
-{
-	log_outputfile_t			output_hashtable[LOG_OUTPUTFILES_HASHTABLE_SIZE];	// Table of opened output files.
+	// Save 1st arg as the template ID.
+	strlcpy(output_template->id, Cmd_Argv(1), sizeof(output_template->id));
 	
-	log_outputfile_template_t	*output_file_templates[];							// Non-expanded file names, such as %playernum%.log
-	int							output_file_template_count;							// The number of output file templates.
-	
-	log_eventlogger_t			*event_loggers[];									// Event loggers that outputs the log data to file(s).
-	int							event_logger_count;									// The number of event loggers.
-} logger_t;
+	// Save 2nd arg as template name.
+	output_template->name = Q_strdup(Cmd_Argv(2));
 
-//Log_AddEventLoggerOutput(int eventlogger_id,
+	// Add the template to the array of output file templates.
+	logger->output_file_template_count++;
+	logger->output_file_templates = Q_realloc(logger->output_file_templates, (logger->output_file_template_count * sizeof(*logger->output_file_templates)));
 
-void Log_ParseOutputTemplates(logger_t logger, const char *template_file)
+	logger->output_file_templates[logger->output_file_template_count - 1] = output_template;
+}
+
+static log_eventlogger_type_t Log_ParseEventloggerType(const char *event_logger_type)
 {
-	// TODO : Read the contents of the template file.
+	if (!strcasecmp(event_logger_type, "DEATH"))
+	{
+		return LOG_DEATH;
+	}
+	else if (!strcasecmp(event_logger_type, "MOVE"))
+	{
+		return LOG_MOVE;
+	}
+	else if (!strcasecmp(event_logger_type, "MATCHSTART"))
+	{
+		return LOG_MATCHSTART;
+	}
+	else if (!strcasecmp(event_logger_type, "MATCHEND"))
+	{
+		return LOG_MATCHEND;
+	}
+	else if (!strcasecmp(event_logger_type, "DEMOSTART"))
+	{
+		return LOG_DEMOSTART;
+	}
+	else if (!strcasecmp(event_logger_type, "DEMOEND"))
+	{
+		return LOG_DEMOEND;
+	}
+	else if (!strcasecmp(event_logger_type, "SPAWN"))
+	{
+		return LOG_SPAWN;
+	}
+	else if (!strcasecmp(event_logger_type, "ITEMPICKUP"))
+	{
+		return LOG_ITEMPICKUP;
+	}
+}
 
-	// TODO : Strip all comments.
+static qbool Log_TokenizeNextLine(char **t_line_start, char **t_line_end)
+{
+	char *line_start = NULL;
+	char *line_end = NULL;
+	char line_end_save	= '\n';	// The previous end of line character.
 
-	// TODO : Count the number of event loggers and allocate memory for them in the logger struct. (#EVENT)
+	// Make sure we have something to work with.
+	if (!t_line_start || !t_line_end)
+	{
+		return false;
+	}
 
-	// TODO : Count the number of output file templates and allocate memory from them in the logger struct. (#FILE)
+	line_start = (*t_line_start);
+	line_end = (*t_line_end);
 
-	// TODO : Loop and do:
-		// TODO : Tokenize the current line.
+	// Find the end of the line and terminate it so that we can tokenize it.
+	for (line_end = line_start; *line_end && (*line_end != '\n'); line_end++) ;
+
+	// Save the last char before terminating so that we can make it fine again after tokenizing.
+	line_end_save = *line_end;
+	(*line_end) = 0;
+
+	// Tokenize the current line.
+	Cmd_TokenizeString(line_start);
+
+	// Restore the line ending.
+	(*line_end) = line_end_save;
+
+	// Return the new pointers.
+	(*t_line_start) = line_start;
+	(*t_line_end) = line_end;
+
+	return true;
+}
+
+static void Log_ClearEventLogger(log_eventlogger_t *event_logger)
+{
+	Q_free(event_logger->output_template_string);
+	Q_free(event_logger->outputfile_templates);
+	memset(event_logger, 0, sizeof(log_eventlogger_t));
+}
+
+static void Log_ClearOutputFileTemplate(log_outputfile_template_t *file_template)
+{
+	Q_free(file_template->name);
+	memset(file_template, 0, sizeof(*file_template));
+}
+
+void Log_ClearLogger(logger_t *logger)
+{
+	int i;
+
+	for (i = 0; i < logger->event_logger_count; i++)
+	{
+		Log_ClearEventLogger(logger->event_loggers[i]);
+		Q_free(logger->event_loggers[i]);
+	}
+
+	for (i = 0; i < logger->output_file_template_count; i++)
+	{
+		Log_ClearOutputFileTemplate(logger->output_file_templates[i]);
+		Q_free(logger->output_file_templates[i]);
+	}
+
+	memset(logger, 0, sizeof(logger_t));
+}
+
+qbool Log_ParseOutputTemplates(logger_t *logger, const char *template_file)
+{
+	#define LOG_NEXTLINE() { if (!(*line_end)) break; line_start = line_end + 1; continue; } 
+
+	int eventlogger_count	= 0;
+	int file_template_count	= 0;
+	char *text				= NULL;
+	char *line_start		= NULL; // Start of the current line.
+	char *line_end			= NULL; // End of the current line.
+	long filelen			= 0;
+	int line				= 0;
+	int arg_count			= 0;
+
+	Log_ClearLogger(logger);
+
+	// Read the contents of the template file.
+	if (!COM_ReadFile(template_file, &text, &filelen))
+	{
+		Sys_PrintError("Error! Output templates parsing: Failed to read from file %s\n", template_file);
+		return false;
+	}
+
+	line_start = text;
+	line_end = text;
+
+	// Count the number of events and filename templates so that we can allocate enough memory.
+	while (*line_end)
+	{
+		// Tokenize the next line.
+		if (!Log_TokenizeNextLine(&line_start, &line_end))
+		{
+			Sys_PrintError("Error! Output templates parsing: Failed to tokenize line, NULL pointers passed when parsing %s.\n", template_file);
+			return false;
+		}
+
+		// No tokens on this line.
+		if (!(arg_count = Cmd_Argc()))
+		{
+			LOG_NEXTLINE();
+		}
+
+		if (!strcasecmp(Cmd_Argv(0), "#FILE"))
+		{
+			file_template_count++;
+		}
+		else if (!strcasecmp(Cmd_Argv(0), "#EVENT"))
+		{
+			eventlogger_count++;
+		}
+
+		LOG_NEXTLINE();
+	}
+
+	// Allocate memory.
+	logger->event_loggers = Q_calloc(eventlogger_count, sizeof(log_eventlogger_t));
+	logger->output_file_templates = Q_calloc(file_template_count, sizeof(log_outputfile_template_t));
+
+	line_start = text;
+	line_end = text;
+
+	while (*line_end)
+	{
+		line++;
+
+		// Tokenize the next line.
+		if (!Log_TokenizeNextLine(&line_start, &line_end))
+		{
+			Sys_PrintError("Error! Output templates parsing: Failed to tokenize line, NULL pointers passed when parsing %s.\n", template_file);
+			return false;
+		}
+
+		// No tokens on this line.
+		if (!(arg_count = Cmd_Argc()))
+		{
+			LOG_NEXTLINE();
+		}
 	
-		// TODO : If // skip to end of line
-	
-		// TODO : If #FILE 
-			// TODO : Allocate memory for the template
-			// TODO : Save 1st arg as the template ID
-			// TODO : Save 2nd arg as template name
-			// TODO : Add the template to the array of output file templates
+		if (!strcasecmp(Cmd_Argv(0), "#FILE"))
+		{
+			LOG_CHECK_NUMARGS(3);
+			Log_ParseFileLine(logger, line);
+		}
+		else if (!strcasecmp(Cmd_Argv(0), "#EVENT"))
+		{
+			char line_end_save = '\n';
+			log_eventlogger_t *eventlogger = NULL;
 
-		// TODO : If #EVENT
-			// TODO : Allocate memory for an eventlogger
-			// TODO : 1st arg = event type
-			// TODO : 2nd arg = id
-			// TODO : From the next line, read everything and save it as a string until an #EVENT_END token is found
-			// TODO : Add the event logger to the list of event loggers
-		
-		// TODO : If #OUTPUT
-			// TODO : Read 1st arg which is the ID of the event logger
-			// TODO : Read 2nd arg the file template ID
-			// TODO : Find the file template with the specified ID
-			// TODO : Find the event logger with the found ID
-				// TODO : Add the file template to the linked list of templates in the event logger.
+			LOG_CHECK_NUMARGS(3);
+
+			// Allocate memory for an eventlogger.
+			eventlogger = (log_eventlogger_t *)Q_calloc(1, sizeof(log_eventlogger_t));
+
+			// Get the event type.
+			eventlogger->type = Log_ParseEventloggerType(Cmd_Argv(1));
+
+			// Get ID.
+			eventlogger->id = atoi(Cmd_Argv(2));
+
+			// From the next line, read everything and save it as a string until an #EVENT_END token is found.
+			{
+				#define EVENT_END_STR "#EVENT_END"
+				int event_end_len = strlen(EVENT_END_STR);
+				line_start = line_end + 1;
+
+				for (line_end = line_start; *line_end; line_end++)
+				{
+					if (*line_end == '\n')
+					{
+						line++; // Could've used strstri, but we want to maintain the line count :)
+					}
+
+					if (!strncasecmp(EVENT_END_STR, line_end, event_end_len))
+					{
+						// Go back to the previous char so we don't include the #.
+						line_end--;
+						break;
+					}
+				}
+
+				line_end_save = (*line_end);
+				(*line_end) = 0;
+
+				// Copy the template substring to the event logger.
+				eventlogger->output_template_string = Q_strdup(line_start);
+
+				(*line_end) = line_end_save;
+			}
+
+			// Add the event logger to the list of event loggers.
+			logger->event_loggers[logger->event_logger_count] = eventlogger;
+			logger->event_logger_count++;
+		}
+		else if (!strcasecmp(Cmd_Argv(0), "#OUTPUT"))
+		{
+			int i										= 0;
+			int event_id								= 0;
+			char *file_template_id						= NULL;
+			log_outputfile_template_t *file_template	= NULL;
+			log_eventlogger_t *eventlogger				= NULL;
+
+			LOG_CHECK_NUMARGS(3);
+
+			// Read the ID of the event logger.
+			event_id = atoi(Cmd_Argv(1));
+
+			// Read the file template ID.
+			file_template_id = Cmd_Argv(2);
+
+			// Find the file template with the specified ID.
+			for (i = 0; i < logger->output_file_template_count; i++)
+			{
+				if (!strcmp(logger->output_file_templates[i]->id, file_template_id))
+				{
+					// We've found the template.
+					file_template = logger->output_file_templates[i];
+					break;
+				}
+			}
+
+			if (!file_template)
+			{
+				Sys_PrintError("Warning! Output templates parsing: #OUTPUT: Found no output file template with id \"%s\" (line %i)\n", file_template_id, line);
+				LOG_NEXTLINE();
+			}
+
+			// Find the event logger with the found ID.
+			for (i = 0; i < logger->event_logger_count; i++)
+			{
+				if (logger->event_loggers[i]->id == event_id)
+				{
+					eventlogger = logger->event_loggers[i];
+					break;
+				}
+			}
+
+			if (!eventlogger)
+			{
+				Sys_PrintError("Warning! Output templates parsing: #OUTPUT: Found no event logger with id %i (line %i)\n", event_id, line);
+				LOG_NEXTLINE();
+			}
+
+			// Add the file template to the list of templates in the event logger.
+			// Reallocate the array to fit a pointer to the new template.
+			eventlogger->templates_count++;
+			eventlogger->outputfile_templates = Q_realloc(eventlogger->outputfile_templates, (eventlogger->templates_count * sizeof(log_outputfile_template_t)));
+			eventlogger->outputfile_templates[eventlogger->templates_count - 1] = file_template;
+		}
+
+		LOG_NEXTLINE();
+	}
+
+	if (logger->event_logger_count != eventlogger_count)
+	{
+		Sys_PrintError("Error! Output templates parsing: Expected %i #EVENTs, only found %i\n", eventlogger_count, logger->event_logger_count);
+		Log_ClearLogger(logger);
+		return false;
+	}
+
+	if (logger->output_file_template_count != file_template_count)
+	{
+		Sys_PrintError("Error! Output templates parsing: Expected %i #FILEs, only found %i\n", file_template_count, logger->output_file_template_count);
+		Log_ClearLogger(logger);
+		return false;
+	}
+
+	return true;
 }
 
 static char *Log_ExpandTemplateString(logger_t *logger, mvd_info_t *mvd, const char *template_string, int player_num)
