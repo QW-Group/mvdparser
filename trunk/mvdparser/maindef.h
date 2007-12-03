@@ -62,6 +62,8 @@ float Q_atof(const char *str);
 #define strncasecmp(s1, s2, n)	_strnicmp((s1), (s2), (n))
 #endif // _WIN32
 
+char *strstri(const char *text, const char *find); // A Case-insensitive strstr.
+
 void Sys_InitDoubleTime(void);
 double Sys_DoubleTime(void);
 

@@ -10,7 +10,7 @@
 // the program exits with a message saying there's not enough memory
 // instead of crashing after trying to use a NULL pointer
 //
-void *Q_malloc (size_t size)
+void *Q_malloc(size_t size)
 {
 	void *p = malloc(size);
 
@@ -24,7 +24,7 @@ void *Q_malloc (size_t size)
 	return p;
 }
 
-void *Q_calloc (size_t n, size_t size)
+void *Q_calloc(size_t n, size_t size)
 {
 	void *p = calloc(n, size);
 
@@ -34,7 +34,7 @@ void *Q_calloc (size_t n, size_t size)
 	return p;
 }
 
-void *Q_realloc (void *p, size_t newsize)
+void *Q_realloc(void *p, size_t newsize)
 {
 	if(!(p = realloc(p, newsize)))
 		Sys_Error ("Q_realloc: Not enough memory free; check disk space\n");
@@ -214,6 +214,32 @@ int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr)
 }
 */
 #endif // _WIN32
+
+// A Case-insensitive strstr.
+char *strstri(const char *text, const char *find)
+{
+	char *s = (char *)text;
+	int findlen = strlen(find);
+
+	// Empty substring, return input (like strstr).
+	if (findlen == 0)
+	{
+		return s;
+	}
+
+	while (*s)
+	{
+		// Check if we can find the substring.
+		if (!strncasecmp(s, find, findlen))
+		{
+			return s;
+		}
+
+		s++;
+	}
+
+	return NULL;
+}
 
 // Append an extension to a path.
 void COM_ForceExtensionEx(char *path, char *extension, size_t path_size)
