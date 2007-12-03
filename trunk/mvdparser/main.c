@@ -3,8 +3,10 @@
 #include "maindef.h"
 #include "mvd_parser.h"
 #include "frag_parser.h"
+#include "logger.h"
 
 cmdline_params_t cmdargs;
+logger_t logger;
 
 void ShowHelp(char *filename)
 {
@@ -87,6 +89,12 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
+	if (!Log_ParseOutputTemplates(&logger, "template.dat"))
+	{
+		Sys_PrintError("Failed to load template file.\n");
+		return 1;
+	}
+
 	if (!LoadFragFile("c:\\fragfile.dat", false))
 	{
 		Sys_PrintError("Failed to load fragfile.dat\n");
@@ -111,6 +119,8 @@ int main(int argc, char **argv)
 
 		Q_free(mvd_data);
 	}
+
+	Log_ClearLogger(&logger);
 
 	return 0;
 }
