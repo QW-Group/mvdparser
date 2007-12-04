@@ -158,7 +158,9 @@ static void MVD_Parser_StatsGather(mvd_info_t *mvd)
 		if ((cf->stats[STAT_HEALTH] <= 0) && (lf->stats[STAT_HEALTH] > 0))
 		{
 			cf->death_count++;
-			// TODO : Log death event.
+			
+			// Log a death event.
+			Log_Event(&logger, mvd, LOG_DEATH, cf->pnum);
 		}
 
 		if ((cf->stats[STAT_HEALTH] >= 100) 
