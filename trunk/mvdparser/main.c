@@ -6,7 +6,6 @@
 #include "logger.h"
 
 cmdline_params_t cmdargs;
-logger_t logger;
 
 void ShowHelp(char *filename)
 {
@@ -48,6 +47,32 @@ qbool Cmdline_Parse(int argc, char **argv)
 					}	
 					break;
 				}
+				case 'f' :
+				{
+					int next_arg = (i + 1);
+
+					if (next_arg < argc)
+					{
+						cmdargs.frag_file = Q_strdup(argv[next_arg]);
+					}
+
+					break;
+				}
+				case 't' :
+				{
+					int next_arg = (i + 1);
+
+					if (next_arg < argc)
+					{
+						cmdargs.template_file = Q_strdup(argv[next_arg]);
+					}
+					else
+					{
+						Sys_PrintError("-t: No template specified\n");
+					}
+					
+					break;
+				}
 			}
 		}
 		else
@@ -74,6 +99,19 @@ qbool Cmdline_Parse(int argc, char **argv)
 	return true;
 }
 
+void CmdArgs_Clear(void)
+{
+	int i;
+
+	for (i = 0; i < cmdargs.mvd_files_count; i++)
+	{
+		Q_free(cmdargs.mvd_files[i]);
+	}
+
+	Q_free(cmdargs.template_file);
+	Q_free(cmdargs.frag_file);
+}
+
 int main(int argc, char **argv)
 {
 	int i;
@@ -89,13 +127,13 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	if (!Log_ParseOutputTemplates(&logger, "template.dat"))
+	if (!Log_ParseOutputTemplates(&logger, cmdargs.template_file) && !Log_ParseOutputTemplates(&logger, "template.dat"))
 	{
 		Sys_PrintError("Failed to load template file.\n");
 		return 1;
 	}
 
-	if (!LoadFragFile("c:\\fragfile.dat", false))
+	if (!LoadFragFile(cmdargs.frag_file, false) && !LoadFragFile("fragfile.dat", false))
 	{
 		Sys_PrintError("Failed to load fragfile.dat\n");
 		return 1;
@@ -120,7 +158,9 @@ int main(int argc, char **argv)
 		Q_free(mvd_data);
 	}
 
+	Log_OutputFilesHashTable_Clear(&logger);
 	Log_ClearLogger(&logger);
+	CmdArgs_Clear();
 
 	return 0;
 }

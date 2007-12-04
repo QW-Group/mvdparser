@@ -32,6 +32,8 @@ typedef struct cmdline_params_s
 	int debug;
 	char **mvd_files;
 	int mvd_files_count;
+	char *template_file;
+	char *frag_file;
 } cmdline_params_t;
 
 extern cmdline_params_t cmdargs;
@@ -86,7 +88,7 @@ int snprintf(char *buffer, size_t count, char const *format, ...);
 // Append an extension to a path.
 void COM_ForceExtensionEx(char *path, char *extension, size_t path_size);
 
-qbool COM_ReadFile(char *filename, byte **data, long *filelen);
+qbool COM_ReadFile(const char *filename, byte **data, long *filelen);
 
 #define MAX_COM_TOKEN	1024
 #define MAX_ARGS		80
