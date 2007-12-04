@@ -219,7 +219,7 @@ int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr)
 char *strstri(const char *text, const char *find)
 {
 	char *s = (char *)text;
-	int findlen = strlen(find);
+	size_t findlen = strlen(find);
 
 	// Empty substring, return input (like strstr).
 	if (findlen == 0)
@@ -262,7 +262,7 @@ void COM_ForceExtensionEx(char *path, char *extension, size_t path_size)
 	Sys_PrintError("Failed to force extension %s for %s\n", extension, path);
 }
 
-qbool COM_ReadFile(char *filename, byte **data, long *filelen)
+qbool COM_ReadFile(const char *filename, byte **data, long *filelen)
 {
 	long len = 0;
 	FILE *f = NULL;
