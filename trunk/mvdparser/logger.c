@@ -4,6 +4,8 @@
 #include "qw_protocol.h"
 #include "logger.h"
 
+logger_t logger;
+
 char *LogVarValueAsString(mvd_info_t *mvd, const char *varname, int player_num);
 
 #define LOG_CHECK_NUMARGS(num)																						\
@@ -153,6 +155,11 @@ qbool Log_ParseOutputTemplates(logger_t *logger, const char *template_file)
 	int arg_count			= 0;
 
 	Log_ClearLogger(logger);
+
+	if (!template_file)
+	{
+		return false;
+	}
 
 	// Read the contents of the template file.
 	if (!COM_ReadFile(template_file, &text, &filelen))
@@ -347,17 +354,17 @@ qbool Log_ParseOutputTemplates(logger_t *logger, const char *template_file)
 	return true;
 }
 
-char *Log_ExpandTemplateString(logger_t *logger, mvd_info_t *mvd, const char *template_string, int player_num)
+char *Log_ExpandTemplateString(logger_t *logger, mvd_info_t *mvd, const char *template_string, int player_num, int *output_len)
 {
 	char var_value[1024];
 	char tmp[1024];
-	int expand_count	= 0;
-	char *vv			= NULL;
-	char *var_start		= NULL;
-	char *var_end		= NULL;
-	char *input			= NULL;
-	char *output		= NULL;
-	size_t template_len	= strlen(template_string) * 3;
+	int expand_count		= 0;
+	char *vv				= NULL;
+	const char *var_start	= NULL;
+	const char *var_end		= NULL;
+	const char *input		= NULL;
+	char *output			= NULL;
+	size_t template_len		= strlen(template_string) * 3;
 
 	//strlcpy(template_str, template_string, sizeof(template_str));
 	input = template_string;
@@ -397,8 +404,10 @@ char *Log_ExpandTemplateString(logger_t *logger, mvd_info_t *mvd, const char *te
 					Sys_Error("Log_ExpandTemplateString: Incorrectly terminated var.\n");
 				}
 
+				var_end++; // Skip the trailing % in the output.
+
 				// Expand the variable based on the current mvd context / player.
-				snprintf(tmp, min((var_end - var_start) + 1, sizeof(tmp)), "%s", var_start);
+				snprintf(tmp, min((var_end - var_start), sizeof(tmp)), "%s", var_start);
 				strlcpy(var_value, LogVarValueAsString(mvd, tmp, player_num), sizeof(var_value));
 
 				// Add the value to the output string.
@@ -406,18 +415,22 @@ char *Log_ExpandTemplateString(logger_t *logger, mvd_info_t *mvd, const char *te
 
 				while (*vv && (expand_count < logger->expand_buf_size))
 				{
+					// TODO : We might cut off a vars value here, but that's not very likely :)
 					*output = *vv;
 					expand_count++;
 
 					output++;
 					vv++;
 				}
+
+				input = var_end;
 			}
 		}
 
 		// Keep count on how many chars we have expanded so that we don't go past the bounds of the array.
 		expand_count++;
 
+		// Grow the array.
 		if (expand_count >= logger->expand_buf_size)
 		{
 			logger->expand_buf_size *= 2;
@@ -432,18 +445,134 @@ char *Log_ExpandTemplateString(logger_t *logger, mvd_info_t *mvd, const char *te
 	}
 
 	*output = 0;
+	
+	if (output_len)
+	{
+		*output_len = expand_count;
+	}
 
 	return logger->expand_buf;
 }
 
-void Log_Event(logger_t *logger, log_eventlogger_type_t type, int player_num)
+log_outputfile_t *Log_OutputFilesHashTable_GetValue(logger_t *logger, const char *expanded_filename)
 {
-	// TODO : Find all event loggers that has the type specified.
-		// TODO : Expand the event loggers template string into an output string.
-		// TODO : Loop through and expand the filename template strings.
-			// TODO : Search for the expanded filename in the output_hashtable
-				// TODO : If found, write the output string to the file
-				// TODO : else open the file first
+	unsigned long filename_hash = Com_HashKey(expanded_filename); 
+	log_outputfile_t *it = (log_outputfile_t *)logger->output_hashtable[filename_hash % LOG_OUTPUTFILES_HASHTABLE_SIZE];
+
+	while (it && (it->filename_hash != filename_hash))
+	{
+		it = it->next;
+	}
+
+	return it;
+}
+
+void Log_OutputFilesHashTable_AddValue(logger_t *logger, log_outputfile_t *output_file)
+{
+	log_outputfile_t *it = NULL;
+	unsigned long filename_hash;
+
+	output_file->filename_hash = Com_HashKey(output_file->filename);
+	filename_hash = (output_file->filename_hash % LOG_OUTPUTFILES_HASHTABLE_SIZE);
+	it = logger->output_hashtable[filename_hash];
+
+	if (!it)
+	{
+		logger->output_hashtable[filename_hash] = output_file;
+	}
+	else
+	{
+		while (it->next)
+		{
+			it = it->next;
+		}
+
+		it->next = output_file;
+	}
+}
+
+void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, int player_num)
+{
+	int i;
+	int j;
+	int output_len					= 0;
+	char *output					= NULL;
+	char *expanded_filename			= NULL;
+	log_eventlogger_t *eventlogger	= NULL;
+	log_outputfile_t *output_file	= NULL;
+
+	for (i = 0; i < logger->event_logger_count; i++)
+	{
+		eventlogger = logger->event_loggers[i];
+
+		// Find all event loggers that has the type specified.
+		if (eventlogger->type != type)
+		{
+			continue;
+		}
+
+		// Expand the event loggers template string into an output string.
+		output = Q_strdup(Log_ExpandTemplateString(logger, mvd, eventlogger->output_template_string, player_num, &output_len));
+
+		// Loop through and expand the filename template strings.
+		for (j = 0; j < eventlogger->templates_count; j++)
+		{
+			expanded_filename = Log_ExpandTemplateString(logger, mvd, eventlogger->outputfile_templates[j]->name, player_num, NULL);
+
+			// Search for the expanded filename in the output_hashtable.
+			output_file = Log_OutputFilesHashTable_GetValue(logger, expanded_filename);
+
+			// If no open file was found, open it and add it to the hash table.
+			if (!output_file)
+			{
+				output_file = Q_calloc(1, sizeof(*output_file));
+				output_file->filename = Q_strdup(expanded_filename);
+				output_file->file = fopen(expanded_filename, "w");
+
+				if (!output_file->file)
+				{
+					Q_free(output_file);
+					Q_free(output);
+					Sys_Error("Log_Event: Failed to open the file %s (expanded from %s) for output.\n", output_file->filename, eventlogger->outputfile_templates[j]->name); 
+				}
+
+				Log_OutputFilesHashTable_AddValue(logger, output_file);
+			}
+
+			if (output_len > 0)
+			{
+				// Write the expanded output to the file.
+				fwrite(output, sizeof(char), output_len, output_file->file); 
+				fflush(output_file->file);
+			}
+		}
+	}
+
+	Q_free(output);
+}
+
+void Log_OutputFilesHashTable_Clear(logger_t *logger)
+{
+	int i;
+	int j;
+	log_outputfile_t *tmp = NULL;
+	log_outputfile_t *l	= NULL;
+
+	for (i = 0; i < LOG_OUTPUTFILES_HASHTABLE_SIZE; i++)
+	{
+		l = logger->output_hashtable[i];
+		
+		while (l)
+		{
+			fflush(l->file);
+			fclose(l->file);
+			Q_free(l->filename);
+
+			tmp = l->next;
+			Q_free(l);
+			l = tmp;
+		}
+	}
 }
 
 // ============================================================================
@@ -475,7 +604,7 @@ static char *LogVar_animframe(mvd_info_t *mvd, const char *varname, int player_n
 	return va("%i", mvd->players[player_num].frame);
 }
 
-static char *LogVar_userid(mvd_info_t *mvd, const char *varname, int player_num)
+static char *LogVar_playerid(mvd_info_t *mvd, const char *varname, int player_num)
 {
 	return va("%i", mvd->players[player_num].userid);
 }
@@ -963,7 +1092,7 @@ logvar_t logvar_list[] =
 	LOGVAR_DEFINE(userinfo, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(playernum, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(animframe, LOGVAR_PLAYER),
-	LOGVAR_DEFINE(userid, LOGVAR_PLAYER),
+	LOGVAR_DEFINE(playerid, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(frags, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(spectator, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(health, LOGVAR_PLAYER),
@@ -1075,6 +1204,11 @@ void LogVarHashTable_AddValue(logvar_t **hashtable, logvar_t *logvar)
 char *LogVarValueAsString(mvd_info_t *mvd, const char *varname, int player_num)
 {
 	logvar_t *logvar = LogVarHashTable_GetValue(logvar_hashtable, varname);
+
+	if (!logvar)
+	{
+		return "";
+	}
 
 	#ifdef _DEBUG
 	if (strcasecmp(varname, logvar->name))

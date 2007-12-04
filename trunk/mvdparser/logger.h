@@ -17,6 +17,7 @@ typedef enum log_eventlogger_type_s
 {
 	LOG_UNKNOWN,
 	LOG_DEATH,
+	LOG_FRAG,
 	LOG_MOVE,
 	LOG_MATCHSTART,
 	LOG_MATCHEND,
@@ -44,7 +45,7 @@ typedef struct log_eventlogger_s
 
 typedef struct logger_s
 {
-	log_outputfile_t			output_hashtable[LOG_OUTPUTFILES_HASHTABLE_SIZE];	// Table of opened output files.
+	log_outputfile_t			*output_hashtable[LOG_OUTPUTFILES_HASHTABLE_SIZE];	// Table of opened output files.
 	
 	log_outputfile_template_t	**output_file_templates;							// Non-expanded file names, such as %playernum%.log
 	int							output_file_template_count;							// The number of output file templates.
@@ -56,8 +57,15 @@ typedef struct logger_s
 	int							expand_buf_size;									// The size of the expand buffer.
 } logger_t;
 
+extern logger_t logger;
+
 void Log_ClearLogger(logger_t *logger);
 qbool Log_ParseOutputTemplates(logger_t *logger, const char *template_file);
 void LogVarHashTable_Test(mvd_info_t *mvd);
 
+void Log_OutputFilesHashTable_Clear(logger_t *logger);
+void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, int player_num);
+
 #endif // __LOGGER_H__
+
+
