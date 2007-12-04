@@ -223,6 +223,11 @@ qbool LoadFragFile(char *filename, qbool quiet)
 	qbool gotversion = false;
 	qbool warned_flagmsg_overflow = false;
 
+	if (!filename)
+	{
+		return false;
+	}
+
 	InitFragDefs();
 
 	strlcpy(fragfilename, filename, sizeof(fragfilename));
