@@ -148,17 +148,16 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			char *demoname = cmdargs.mvd_files[i]; // TODO : Get name without path.
+			char *demopath = cmdargs.mvd_files[i];
 
 			// Parse the demo.
 			Sys_Print("Starting to parse %s\n", cmdargs.mvd_files[i]);
-			MVD_Parser_StartParse(demoname, mvd_data, mvd_len);
+			MVD_Parser_StartParse(demopath, mvd_data, mvd_len);
 		}
 
 		Q_free(mvd_data);
 	}
 
-	Log_OutputFilesHashTable_Clear(&logger);
 	Log_ClearLogger(&logger);
 	CmdArgs_Clear();
 
