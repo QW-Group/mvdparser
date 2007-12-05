@@ -385,6 +385,9 @@ typedef struct players_s
 	int		weapon_count[7];				// %sgcount% %ssgcount% %ngcount% %sngcount% %glcount% %rlcount% %lgcount%
 	int		weapon_drops[7];				// %sgdrop% %ssgdrop% %ngdrop% %sngdrop% %gldrop% %rldrop% %lgdrop%
 	int		weapon_shots[9];				// %sgshots% %ssgshots% %ngshots% %sngshots% %glshots% %rlshots% %lgshots%
+	
+	int		last_dropped_weapon;			// %droppeweapon%
+	char	last_pickedup_item[16];			// %pickedupitem%
 
 	int		armor_took_flag;
 	float	weapon_time[7];
@@ -470,6 +473,9 @@ typedef struct server_s
 	movevars_t	movevars;
 	qbool		countdown;
 	qbool		match_started;
+	qbool		match_ended;
+	qbool		match_overtime;
+	int			overtime_minutes;
 } server_t;
 
 typedef enum log_eventtype_s
