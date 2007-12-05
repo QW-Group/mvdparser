@@ -62,4 +62,13 @@ extern char *stat_string[];
 #define	IT_SIGIL3			(1 << 30)
 #define	IT_SIGIL4			(1 << 31)
 
+#define AXE_NUM	1
+#define SG_NUM	2
+#define SSG_NUM	3
+#define NG_NUM	4
+#define SNG_NUM	5
+#define GL_NUM	6
+#define RL_NUM	7
+#define LG_NUM	8
+
 #endif // __STATS_H__
