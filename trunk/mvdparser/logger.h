@@ -2,6 +2,8 @@
 #ifndef __LOGGER_H__
 #define __LOGGER_H__
 
+#include <stdio.h>
+
 #define LOG_OUTPUTFILES_HASHTABLE_SIZE	512
 #define LOG_MAX_ID_LENGTH				32
 
@@ -24,7 +26,8 @@ typedef enum log_eventlogger_type_s
 	LOG_DEMOSTART,
 	LOG_DEMOEND,
 	LOG_SPAWN,
-	LOG_ITEMPICKUP
+	LOG_ITEMPICKUP,
+	LOG_WEAPONDROP
 } log_eventlogger_type_t;
 
 typedef struct log_outputfile_template_s
@@ -65,6 +68,10 @@ void LogVarHashTable_Test(mvd_info_t *mvd);
 
 void Log_OutputFilesHashTable_Clear(logger_t *logger);
 void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, int player_num);
+
+char *WeaponFlagToName(int flag);
+char *Armor_Name(int num);
+char *WeaponNumToName(int num);
 
 #endif // __LOGGER_H__
 

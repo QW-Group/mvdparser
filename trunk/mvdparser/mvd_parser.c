@@ -28,99 +28,6 @@ static void MVD_Parser_Init(mvd_info_t *mvd)
 	}
 }
 
-#define GREEN_ARMOR_BIT			13
-#define GREEN_ARMOR				1
-#define YELLOW_ARMOR			2
-#define RED_ARMOR				3
-#define ARMOR_FLAG_BYNUM(num)	(IT_ARMOR##num)
-
-#define HAS_ARMOR(player, num)	((player)->stats[STAT_ITEMS] & (1 << (GREEN_ARMOR_BIT - 1 + bound(GREEN_ARMOR, num, RED_ARMOR))))
-
-char *Armor_Name(int num)
-{
-	switch (num)
-	{
-		case GREEN_ARMOR :	return "GA";
-		case YELLOW_ARMOR :	return "YA";
-		case RED_ARMOR :	return "RA";
-	}
-
-	return NULL;
-}
-
-char *Weapon_Name(int num)
-{
-	switch (num) 
-	{
-			case IT_AXE:				return "AXE";
-			case IT_SHOTGUN:			return "SG";
-			case IT_SUPER_SHOTGUN:		return "SSG";
-			case IT_NAILGUN:			return "NG";
-			case IT_SUPER_NAILGUN:		return "SNG";
-			case IT_GRENADE_LAUNCHER:	return "GL";
-			case IT_ROCKET_LAUNCHER:	return "RL";
-			case IT_LIGHTNING:			return "LG";
-			default:					return NULL;
-	}
-}
-/*
-#define MAX_LOG_MESSAGE_LENGTH	256
-
-static void MVD_Parser_ClearEvents(mvd_info_t *mvd)
-{
-	log_event_t *tmp = NULL;
-	log_event_t *it = mvd->log_events_tail;
-
-	while (it)
-	{
-		Q_free(it->message);
-
-		tmp = it->next;
-		Q_free(it);
-		it = tmp;
-	}
-}*/
-
-static void MVD_Parser_LogEvent(mvd_info_t *mvd, log_eventtype_t type, vec3_t loc)
-{
-	log_event_t *e = NULL;
-	log_event_t *tmp = NULL;
-
-	e->time = mvd->demotime;
-	e->type = type;
-
-	switch (type)
-	{
-		case BASIC :
-		{
-			e = (log_event_t *)Q_malloc(sizeof(*e));
-		}
-		case DEATH :
-		default :
-		{
-			return;
-		}
-	}
-
-	Sys_PrintDebug(2, "MVD_Parser_LogEvent: \n");
-
-	// Empty list.
-	if (!mvd->log_events_tail)
-	{
-		mvd->log_events_tail = e;
-		mvd->log_events_head = e;
-	}
-
-	// Leave the tail be so we have somewhere to start from
-	// and add the new ones to the head instead.
-	if (mvd->log_events_head)
-	{
-		tmp = mvd->log_events_head;
-		tmp->next = e;
-		mvd->log_events_head = e;
-	}
-}
-
 static void MVD_Parser_StatsGather(mvd_info_t *mvd)
 {
 	int i;
@@ -233,24 +140,27 @@ static void MVD_Parser_StatsGather(mvd_info_t *mvd)
 		{
 			if (lf->armor_count[armor - 1] < cf->armor_count[armor - 1])
 			{
-				char *armorname = Armor_Name(armor);
-				// TODO : Log picking up an armor.
+				strlcpy(cf->last_pickedup_item, Armor_Name(armor), sizeof(cf->last_pickedup_item));
+				Log_Event(&logger, mvd, LOG_ITEMPICKUP, cf->pnum);
 			}
 		}
 
 		if (lf->pent_count < cf->pent_count)
 		{
-			// TODO : Log picking up pent.
+			strlcpy(cf->last_pickedup_item, "PENT", sizeof(cf->last_pickedup_item));
+			Log_Event(&logger, mvd, LOG_ITEMPICKUP, cf->pnum);
 		}
 
 		if (lf->quad_count < cf->quad_count)
 		{
-			// TODO : Log picking up quad.
+			strlcpy(cf->last_pickedup_item, "QUAD", sizeof(cf->last_pickedup_item));
+			Log_Event(&logger, mvd, LOG_ITEMPICKUP, cf->pnum);
 		}
 
 		if (lf->ring_count < cf->ring_count)
 		{
-			// TODO : Log picking up ring.
+			strlcpy(cf->last_pickedup_item, "RING", sizeof(cf->last_pickedup_item));
+			Log_Event(&logger, mvd, LOG_ITEMPICKUP, cf->pnum);
 		}
 
 		// Weapons.
@@ -258,8 +168,8 @@ static void MVD_Parser_StatsGather(mvd_info_t *mvd)
 		{
 			if (lf->weapon_count[j] < cf->weapon_count[j])
 			{
-				char *weapon_name = Weapon_Name(j);
-				// TODO : Log weapon pickup event.
+				strlcpy(cf->last_pickedup_item, WeaponNumToName(j + SSG_NUM), sizeof(cf->last_pickedup_item));
+				Log_Event(&logger, mvd, LOG_ITEMPICKUP, cf->pnum);
 			}
 		}
 
@@ -500,7 +410,7 @@ static qbool MVD_Parser_ReadFrame(mvd_info_t *mvd)
 // mvdbuf = The demo buffer to read from.
 // filelen = The length of the demo in bytes.
 //
-qbool MVD_Parser_StartParse(char *demoname, byte *mvdbuf, long filelen)
+qbool MVD_Parser_StartParse(char *demopath, byte *mvdbuf, long filelen)
 {
 	mvd_info_t mvd;
 	double start_time = Sys_DoubleTime();
@@ -509,7 +419,7 @@ qbool MVD_Parser_StartParse(char *demoname, byte *mvdbuf, long filelen)
 	// Init the mvd struct.
 	MVD_Parser_Init(&mvd);
 
-	mvd.demo_name = demoname;
+	mvd.demo_name = demopath;
 
 	// Set the demo pointer.
 	mvd.demo_start = mvdbuf;
@@ -518,6 +428,8 @@ qbool MVD_Parser_StartParse(char *demoname, byte *mvdbuf, long filelen)
 
 	memset(&net_message, 0, sizeof(net_message));
 	net_message.maxsize = 8192;
+
+	Log_Event(&logger, &mvd, LOG_DEMOSTART, -1);
 
 	while (mvd.demo_ptr < (mvd.demo_start + mvd.demo_size))
 	{
@@ -557,6 +469,16 @@ qbool MVD_Parser_StartParse(char *demoname, byte *mvdbuf, long filelen)
 		// Save the current player infos for next frame.
 		memcpy(mvd.lf_players, mvd.players, sizeof(players_t) * MAX_PLAYERS);
 	}
+
+	// If we haven't found the match end yet so raise it now.
+	if (!mvd.serverinfo.match_ended)
+	{
+		Log_Event(&logger, &mvd, LOG_MATCHEND, -1);
+	}
+
+	Log_Event(&logger, &mvd, LOG_DEMOEND, -1);
+
+	Log_OutputFilesHashTable_Clear(&logger);
 
 	end_time = Sys_DoubleTime() - start_time;
 

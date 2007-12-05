@@ -16,6 +16,14 @@
 
 #define PLAYER_ISVALID(player) ((player)->name && !(player)->spectator)
 
+#define GREEN_ARMOR_BIT			13
+#define GREEN_ARMOR				1
+#define YELLOW_ARMOR			2
+#define RED_ARMOR				3
+#define ARMOR_FLAG_BYNUM(num)	(IT_ARMOR##num)
+
+#define HAS_ARMOR(player, num)	((player)->stats[STAT_ITEMS] & (1 << (GREEN_ARMOR_BIT - 1 + bound(GREEN_ARMOR, num, RED_ARMOR))))
+
 #define clamp(a,b,c) (a = min(max(a, b), c))
 #define bound(a,b,c) ((a) >= (c) ? (a) : (b) < (a) ? (a) : (b) > (c) ? (c) : (b))
 #define Q_rint(x) ((x) > 0 ? (int) ((x) + 0.5) : (int) ((x) - 0.5))

@@ -18,6 +18,50 @@ char *LogVarValueAsString(mvd_info_t *mvd, const char *varname, int player_num);
 	}																												\
 }
 
+char *Armor_Name(int num)
+{
+	switch (num)
+	{
+		case GREEN_ARMOR :	return "GA";
+		case YELLOW_ARMOR :	return "YA";
+		case RED_ARMOR :	return "RA";
+	}
+
+	return NULL;
+}
+
+char *WeaponFlagToName(int flag)
+{
+	switch (flag) 
+	{
+		case IT_AXE:				return "AXE";
+		case IT_SHOTGUN:			return "SG";
+		case IT_SUPER_SHOTGUN:		return "SSG";
+		case IT_NAILGUN:			return "NG";
+		case IT_SUPER_NAILGUN:		return "SNG";
+		case IT_GRENADE_LAUNCHER:	return "GL";
+		case IT_ROCKET_LAUNCHER:	return "RL";
+		case IT_LIGHTNING:			return "LG";
+		default:					return NULL;
+	}
+}
+
+char *WeaponNumToName(int num)
+{
+	switch (num) 
+	{
+		case AXE_NUM:		return "AXE";
+		case SG_NUM:		return "SG";
+		case SSG_NUM:		return "SSG";
+		case NG_NUM:		return "NG";
+		case SNG_NUM:		return "SNG";
+		case GL_NUM:		return "GL";
+		case RL_NUM:		return "RL";
+		case LG_NUM:		return "LG";
+		default:			return NULL;
+	}
+}
+
 static void Log_ParseFileLine(logger_t *logger, int line)
 {
 	// Allocate memory for the template.
@@ -495,11 +539,30 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 {
 	int i;
 	int j;
+	int p;
+	int player_start				= player_num;
+	int player_count				= 1;
 	int output_len					= 0;
 	char *output					= NULL;
 	char *expanded_filename			= NULL;
 	log_eventlogger_t *eventlogger	= NULL;
 	log_outputfile_t *output_file	= NULL;
+
+	int num_written_to				= 0;
+	qbool skip						= false;
+	log_outputfile_t *written_to[128]; // An array containing the files we've already written to. HACK HACK!
+	int n;
+	
+	memset(written_to, 0, sizeof(written_to));
+
+	// If this event isn't directed at any particular player we still need to expand
+	// player-specific variables in the filenames, since the event should be registered
+	// in all files, even if they're player specific.
+	if (player_num < 0)
+	{
+		player_start = 0;
+		player_count = 32;
+	}
 
 	for (i = 0; i < logger->event_logger_count; i++)
 	{
@@ -514,36 +577,71 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 		// Expand the event loggers template string into an output string.
 		output = Q_strdup(Log_ExpandTemplateString(logger, mvd, eventlogger->output_template_string, player_num, &output_len));
 
-		// Loop through and expand the filename template strings.
-		for (j = 0; j < eventlogger->templates_count; j++)
+		// See the above comment for setting player_count for explination.
+		// TODO : Make this more readable by making the stuff inside the for-loop a separate function, and calling it in two separate if-cases instead.
+		for (p = player_start; p < (player_start + player_count); p++)
 		{
-			expanded_filename = Log_ExpandTemplateString(logger, mvd, eventlogger->outputfile_templates[j]->name, player_num, NULL);
-
-			// Search for the expanded filename in the output_hashtable.
-			output_file = Log_OutputFilesHashTable_GetValue(logger, expanded_filename);
-
-			// If no open file was found, open it and add it to the hash table.
-			if (!output_file)
+			if (!PLAYER_ISVALID(&mvd->players[p]))
 			{
-				output_file = Q_calloc(1, sizeof(*output_file));
-				output_file->filename = Q_strdup(expanded_filename);
-				output_file->file = fopen(expanded_filename, "w");
-
-				if (!output_file->file)
-				{
-					Q_free(output_file);
-					Q_free(output);
-					Sys_Error("Log_Event: Failed to open the file %s (expanded from %s) for output.\n", output_file->filename, eventlogger->outputfile_templates[j]->name); 
-				}
-
-				Log_OutputFilesHashTable_AddValue(logger, output_file);
+				continue;
 			}
 
-			if (output_len > 0)
+			// Loop through and expand the filename template strings for this event logger
+			// and then write the output to the files.
+			for (j = 0; j < eventlogger->templates_count; j++)
 			{
-				// Write the expanded output to the file.
-				fwrite(output, sizeof(char), output_len, output_file->file); 
-				fflush(output_file->file);
+				expanded_filename = Log_ExpandTemplateString(logger, mvd, eventlogger->outputfile_templates[j]->name, p, NULL);
+
+				// Search for the expanded filename in the output_hashtable.
+				output_file = Log_OutputFilesHashTable_GetValue(logger, expanded_filename);
+
+				// If no open file was found, open it and add it to the hash table.
+				if (!output_file)
+				{
+					output_file = Q_calloc(1, sizeof(*output_file));
+					output_file->filename = Q_strdup(expanded_filename);
+					output_file->file = fopen(expanded_filename, "w");
+
+					if (!output_file->file)
+					{
+						Q_free(output_file->filename);
+						Q_free(output_file);
+						Q_free(output);
+						Sys_Error("Log_Event: Failed to open the file %s (expanded from %s) for output.\n", output_file->filename, eventlogger->outputfile_templates[j]->name); 
+					}
+
+					Log_OutputFilesHashTable_AddValue(logger, output_file);
+				}
+
+				// Check so that we haven't written to this file yet.
+				// TODO : HACK HACK HACK fix this in a nicer way :((
+				{
+					skip = false;
+
+					for (n = 0; n < num_written_to; n++)
+					{
+						if (output_file == written_to[n])
+						{
+							skip = true;
+							break;
+						}
+					}
+
+					if (skip)
+					{
+						continue;
+					}
+
+					written_to[num_written_to] = output_file;
+					num_written_to++;
+				}
+
+				if (output_len > 0)
+				{
+					// Write the expanded output to the file.
+					fwrite(output, sizeof(char), output_len, output_file->file); 
+					fflush(output_file->file);
+				}
 			}
 		}
 	}
@@ -554,7 +652,6 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 void Log_OutputFilesHashTable_Clear(logger_t *logger)
 {
 	int i;
-	int j;
 	log_outputfile_t *tmp = NULL;
 	log_outputfile_t *l	= NULL;
 
@@ -1042,6 +1139,16 @@ static char *LogVar_demoname(mvd_info_t *mvd, const char *varname, int player_nu
 	return mvd->demo_name;
 }
 
+static char *LogVar_droppedweapon(mvd_info_t *mvd, const char *varname, int player_num)
+{
+	return va("%i", mvd->players[player_num].last_dropped_weapon);
+}
+
+static char *LogVar_droppedweaponstr(mvd_info_t *mvd, const char *varname, int player_num)
+{
+	return WeaponNumToName(mvd->players[player_num].last_dropped_weapon);
+}
+
 typedef char * (* logvar_func)(mvd_info_t *mvd, const char *varname, int player_num);
 
 typedef enum logvartype_e
@@ -1156,7 +1263,9 @@ logvar_t logvar_list[] =
 	LOGVAR_DEFINE(yaw, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(distancemoved, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(topcolor, LOGVAR_PLAYER),
-	LOGVAR_DEFINE(bottomcolor, LOGVAR_PLAYER)
+	LOGVAR_DEFINE(bottomcolor, LOGVAR_PLAYER),
+	LOGVAR_DEFINE(droppedweapon, LOGVAR_PLAYER),
+	LOGVAR_DEFINE(droppedweaponstr, LOGVAR_PLAYER)
 };
 
 #define LOGVARS_LIST_SIZE		(sizeof(logvar_list) / sizeof(logvar_t))
