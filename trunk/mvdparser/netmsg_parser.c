@@ -5,15 +5,11 @@
 #include "net_msg.h"
 #include "netmsg_parser.h"
 #include "frag_parser.h"
+#include "logger.h"
 
 // ========================================================================================
 // HELPER FUNCTITONS
 // ========================================================================================
-
-void NetMsg_Parser_LogEvent(int i, int type, char *string)
-{
-	// TODO : Log events.
-}
 
 // Searches the string for the given key and returns the associated value, or an empty string.
 static char *Info_ValueForKey(char *s, char *key)
@@ -197,37 +193,38 @@ static void Stat_Death(mvd_info_t *mvd, players_t *cp)
 	if (cp->stats[STAT_ACTIVEWEAPON] & IT_LIGHTNING)
 	{
 		cp->weapon_drops[5]++;
-		NetMsg_Parser_LogEvent(mvd->lastto, 2, "lg");
+		cp->last_dropped_weapon = LG_NUM;
+		Log_Event(&logger, mvd, LOG_WEAPONDROP, cp->pnum);
 	}
-	
-	if (cp->stats[STAT_ACTIVEWEAPON] & IT_ROCKET_LAUNCHER)
+	else if (cp->stats[STAT_ACTIVEWEAPON] & IT_ROCKET_LAUNCHER)
 	{
 		cp->weapon_drops[4]++;
-		NetMsg_Parser_LogEvent(mvd->lastto, 2, "rl");
+		cp->last_dropped_weapon = RL_NUM;
+		Log_Event(&logger, mvd, LOG_WEAPONDROP, cp->pnum);
     }
-
-	if (cp->stats[STAT_ACTIVEWEAPON] & IT_GRENADE_LAUNCHER)
+	else if (cp->stats[STAT_ACTIVEWEAPON] & IT_GRENADE_LAUNCHER)
     {
 		cp->weapon_drops[3]++;
-		NetMsg_Parser_LogEvent(mvd->lastto, 2, "gl");
+		cp->last_dropped_weapon = GL_NUM;
+		Log_Event(&logger, mvd, LOG_WEAPONDROP, cp->pnum);
     }
-
-	if (cp->stats[STAT_ACTIVEWEAPON] & IT_SUPER_NAILGUN)
+	else if (cp->stats[STAT_ACTIVEWEAPON] & IT_SUPER_NAILGUN)
 	{
 		cp->weapon_drops[2]++;
-		NetMsg_Parser_LogEvent(mvd->lastto, 2, "sng");
+		cp->last_dropped_weapon = SNG_NUM;
+		Log_Event(&logger, mvd, LOG_WEAPONDROP, cp->pnum);
     }
-
-	if (cp->stats[STAT_ACTIVEWEAPON] & IT_NAILGUN)
+	else if (cp->stats[STAT_ACTIVEWEAPON] & IT_NAILGUN)
 	{
 		cp->weapon_drops[1]++;
-		NetMsg_Parser_LogEvent(mvd->lastto, 2, "ng");
+		cp->last_dropped_weapon = NG_NUM;
+		Log_Event(&logger, mvd, LOG_WEAPONDROP, cp->pnum);
 	}
-	
-	if (cp->stats[STAT_ACTIVEWEAPON] & IT_SUPER_SHOTGUN)
+	else if (cp->stats[STAT_ACTIVEWEAPON] & IT_SUPER_SHOTGUN)
 	{
 		cp->weapon_drops[0]++;
-		NetMsg_Parser_LogEvent(mvd->lastto, 2, "ssg");
+		cp->last_dropped_weapon = SSG_NUM;
+		Log_Event(&logger, mvd, LOG_WEAPONDROP, cp->pnum);
 	}
 }
 
@@ -468,14 +465,41 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 	Sys_PrintDebug(5, "svc_print: (%s) RAW: %s\n", print_strings[level], str);
 	Sys_PrintDebug(1, "svc_print: (%s) %s\n", print_strings[level], Sys_RedToWhite(str));
 	
-	// TODO : Parse frags.
+	// Parse frags.
 	Frags_Parse(mvd, str, level);
 
-	if ((level == PRINT_HIGH) && !strncmp(str, "matchdate:", 10))
+	if (level == PRINT_HIGH)
 	{
-		// TODO : Save match start date.
-		// matchdate: Fri Nov 23, 16:33:46 2007
-		// matchdate: 2007-11-23 17:12:44 CET
+		if (!strncmp(str, "matchdate:", 10))
+		{
+			// TODO : Save match start date.
+			// matchdate: Fri Nov 23, 16:33:46 2007
+			// matchdate: 2007-11-23 17:12:44 CET
+		}
+		else if (!strncmp(str, "The match is over", 17))
+		{
+			mvd->serverinfo.match_ended = true;
+			Log_Event(&logger, mvd, LOG_MATCHEND, -1);
+		}
+		else if (strstr(str, "overtime follows"))
+		{
+			char *s = str;
+
+			// "\x90%s\x91 minute%s overtime follows"
+			while (*s != '\x91')
+			{
+				s++;
+			}
+
+			*s = 0;
+
+			mvd->serverinfo.overtime_minutes = atoi(str + 1);
+		}
+		else if (!strncmp(str, "time over, the game is a draw", 29))
+		{
+			mvd->serverinfo.match_overtime = true;
+
+		}
 	}
 }
 
@@ -920,9 +944,9 @@ static void NetMsg_Parser_Parse_svc_deltapacketentities(mvd_info_t *mvd)
 	NetMsg_Parser_ParsePacketEntities(mvd, true);
 }
 
-static void NetMsg_Parser_Parse_svc_maxspeed(void)
+static void NetMsg_Parser_Parse_svc_maxspeed(mvd_info_t *mvd)
 {
-	MSG_ReadFloat();
+	mvd->serverinfo.movevars.maxspeed = MSG_ReadFloat();
 }
 
 static void NetMsg_Parser_Parse_svc_entgravity(void)
@@ -947,18 +971,21 @@ static void NetMsg_Parser_Parse_svc_setinfo(mvd_info_t *mvd)
 
 static void NetMsg_Parser_Parse_svc_serverinfo(mvd_info_t *mvd)
 {
+	int i;
 	char key[MAX_INFO_KEY];
 	char value[MAX_INFO_STRING];
 
 	strlcpy(key, MSG_ReadString(), sizeof(key));
 	strlcpy(value, MSG_ReadString(), sizeof(value));
 
-	if (!strcmp(key, "status") && strcmp(value, "Countdown"))
+	if (!mvd->serverinfo.match_started && !strcmp(key, "status") && strcmp(value, "Countdown"))
 	{
 		// TODO : Do a better check here maybe?
 		// If the status is not countdown, the match has started.
 		mvd->serverinfo.match_started = true;
 		mvd->match_start_demotime = mvd->demotime;
+
+		Log_Event(&logger, mvd, LOG_MATCHSTART, -1);
 	}
 }
 
@@ -1252,7 +1279,7 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			}
 			case svc_maxspeed :
 			{
-				NetMsg_Parser_Parse_svc_maxspeed();
+				NetMsg_Parser_Parse_svc_maxspeed(mvd);
 				break;
 			}
 			case svc_nails2 :
