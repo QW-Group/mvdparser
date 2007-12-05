@@ -17,10 +17,6 @@ void *Q_malloc(size_t size)
 	if (!p)
 		Sys_Error ("Q_malloc: Not enough memory free; check disk space\n");
 
-#ifndef _DEBUG
-	memset(p, 0, size);
-#endif
-
 	return p;
 }
 
