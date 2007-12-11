@@ -1387,6 +1387,7 @@ void LogVarHashTable_Init(void)
 
 void LogVarHashTable_Test(mvd_info_t *mvd)
 {
+#ifdef _DEBUG
 	int i;
 	int pnum;
 	unsigned long hash;
@@ -1410,5 +1411,6 @@ void LogVarHashTable_Test(mvd_info_t *mvd)
 			Sys_PrintError("%s (%i) != %s (%i)\n", logvar_list[i].name, hash, lv->name, lv->hash);
 		}
 	}
+#endif // _DEBUG
 }
 

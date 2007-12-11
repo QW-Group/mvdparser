@@ -1318,7 +1318,7 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			}
 			case svc_disconnect :
 			{
-				LogVarHashTable_Test(mvd);
+				//LogVarHashTable_Test(mvd);
 				Sys_PrintDebug(1, "NetMsg_Parser_StartParse: Disconnected\n");
 				return true;
 			}
