@@ -205,7 +205,7 @@ static void InitFragDefs(void)
 #define	FRAGS_CHECK_VERSION_DEFINED()																	\
 	if (!gotversion) {																					\
 		Sys_PrintError("Fragfile error: #FRAGFILE VERSION must be defined at the head of the file\n");	\
-		goto finish;																						\
+		goto finish;																					\
 	}
 
 qbool LoadFragFile(char *filename, qbool quiet)
@@ -579,6 +579,7 @@ void Frags_Parse(mvd_info_t *mvd, char *fragmessage, int level)
 		return;
 	}
 
+	// Find the frag message.
 	for (i = 0; i < fragdefs.num_fragmsgs; i++)
 	{
 		mess = &fragdefs.msgdata[i];
@@ -607,6 +608,7 @@ void Frags_Parse(mvd_info_t *mvd, char *fragmessage, int level)
 		return;
 	}
 
+	// Find the players mentioned in the frag message.
 	for (i = 0; i < MAX_PLAYERS; i++)
 	{
 		if (!PLAYER_ISVALID(&mvd->players[i]))
@@ -673,6 +675,8 @@ void Frags_Parse(mvd_info_t *mvd, char *fragmessage, int level)
 			players_t *victim = (mess->type == mt_fragged) ? p1 : p2;
 
 			Sys_PrintDebug(3, "Frags_Parse: %s killed %s with %s\n", killer->name, victim->name, wclasses[mess->wclass_index].name);
+
+			//Log_Event(&logger, mvd, 
 			break;
 		}
 		case mt_frag :
