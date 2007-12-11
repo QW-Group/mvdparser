@@ -181,24 +181,29 @@ static void MVD_Parser_StatsGather(mvd_info_t *mvd)
 			float speed;
 
 			// Get the distance vector between the current and last frames origin of the player.
-			VectorSubtract(cf->origin, lf->origin, dv);
+			//VectorSubtract(cf->origin, lf->origin, dv);
+			VectorSubtract(cf->origin, cf->prev_origin, dv);
 
 			// Calculate the distance moved.
 			distance = (float)sqrt(pow(dv[0], 2) + pow(dv[1], 2) + pow(dv[2], 2));
 
-			cf->distance_moved += distance;
-
-			speed = distance / time_since_last_frame;
-
-			// 0 = Don't include standing still when calculating speed. Or should we? :)
-			if (speed > 0)
+			// If we teleport we'll get really high speeds since we moved so far in a short time, cap this :S
+			if (distance < 150)
 			{
-				cf->acc_average_speed += speed;
-				cf->speed_frame_count++;
+				cf->distance_moved += distance;
 
-				if (speed > cf->speed_highest)
+				speed = distance / time_since_last_frame;
+
+				// 0 = Don't include standing still when calculating speed. Or should we? :)
+				if (speed > 0)
 				{
-					cf->speed_highest = speed;
+					cf->acc_average_speed += speed;
+					cf->speed_frame_count++;
+
+					if (speed > cf->speed_highest)
+					{
+						cf->speed_highest = speed;
+					}
 				}
 			}
 		}
@@ -473,7 +478,20 @@ qbool MVD_Parser_StartParse(char *demopath, byte *mvdbuf, long filelen)
 	// If we haven't found the match end yet so raise it now.
 	if (!mvd.serverinfo.match_ended)
 	{
+		int i;
+
 		Log_Event(&logger, &mvd, LOG_MATCHEND, -1);
+
+		// HACK :( 
+		for (i = 0; i < MAX_PLAYERS; i++)
+		{
+			if (!PLAYER_ISVALID(&mvd.players[i]))
+			{
+				continue;
+			}
+
+			Log_Event(&logger, &mvd, LOG_MATCHEND_ALL, i);
+		}
 	}
 
 	Log_Event(&logger, &mvd, LOG_DEMOEND, -1);
