@@ -11,7 +11,7 @@ typedef struct log_outputfile_s
 {
 	char					*filename;		// Expanded filename.
 	FILE					*file;			// The file pointer to the opened file.
-	long					filename_hash;	// A hash of the expanded filename.
+	unsigned long			filename_hash;	// A hash of the expanded filename.
 	struct log_outputfile_s	*next;			// Pointer to the next outputfile (if there's a collision in the hash table).
 } log_outputfile_t; 
 
@@ -22,7 +22,9 @@ typedef enum log_eventlogger_type_s
 	LOG_FRAG,
 	LOG_MOVE,
 	LOG_MATCHSTART,
+	LOG_MATCHSTART_ALL,
 	LOG_MATCHEND,
+	LOG_MATCHEND_ALL,
 	LOG_DEMOSTART,
 	LOG_DEMOEND,
 	LOG_SPAWN,

@@ -98,6 +98,10 @@ static log_eventlogger_type_t Log_ParseEventloggerType(const char *event_logger_
 	{
 		return LOG_MATCHEND;
 	}
+	else if (!strcasecmp(event_logger_type, "MATCHEND_ALL"))
+	{
+		return LOG_MATCHEND_ALL;
+	}
 	else if (!strcasecmp(event_logger_type, "DEMOSTART"))
 	{
 		return LOG_DEMOSTART;
@@ -292,7 +296,8 @@ qbool Log_ParseOutputTemplates(logger_t *logger, const char *template_file)
 			{
 				#define EVENT_END_STR "#EVENT_END"
 				size_t event_end_len = strlen(EVENT_END_STR);
-				line_start = line_end + 1;
+
+				line_start = line_end; // + 1;
 
 				for (line_end = line_start; *line_end; line_end++)
 				{
@@ -558,11 +563,11 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 	// If this event isn't directed at any particular player we still need to expand
 	// player-specific variables in the filenames, since the event should be registered
 	// in all files, even if they're player specific.
-	if (player_num < 0)
+	/*if (player_num < 0)
 	{
 		player_start = 0;
 		player_count = 32;
-	}
+	}*/
 
 	for (i = 0; i < logger->event_logger_count; i++)
 	{
@@ -613,6 +618,7 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 					Log_OutputFilesHashTable_AddValue(logger, output_file);
 				}
 
+				/*
 				// Check so that we haven't written to this file yet.
 				// TODO : HACK HACK HACK fix this in a nicer way :((
 				{
@@ -634,7 +640,7 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 
 					written_to[num_written_to] = output_file;
 					num_written_to++;
-				}
+				}*/
 
 				if (output_len > 0)
 				{
@@ -978,12 +984,17 @@ static char *LogVar_pentcount(mvd_info_t *mvd, const char *varname, int player_n
 
 static char *LogVar_avgspeed(mvd_info_t *mvd, const char *varname, int player_num)
 {
-	return va("%g", mvd->players[player_num].acc_average_speed / mvd->players[player_num].speed_frame_count);
+	if (mvd->players[player_num].speed_frame_count > 0)
+	{
+		return va("%f", mvd->players[player_num].acc_average_speed / mvd->players[player_num].speed_frame_count);
+	}
+
+	return "0";
 }
 
 static char *LogVar_maxspeed(mvd_info_t *mvd, const char *varname, int player_num)
 {
-	return va("%g", mvd->players[player_num].speed_highest);
+	return va("%f", mvd->players[player_num].speed_highest);
 }
 
 static char *LogVar_posx(mvd_info_t *mvd, const char *varname, int player_num)
@@ -1021,7 +1032,7 @@ static char *LogVar_roll(mvd_info_t *mvd, const char *varname, int player_num)
 
 static char *LogVar_distancemoved(mvd_info_t *mvd, const char *varname, int player_num)
 {
-	return va("%g", mvd->players[player_num].distance_moved);
+	return va("%f", mvd->players[player_num].distance_moved);
 }
 
 static char *LogVar_topcolor(mvd_info_t *mvd, const char *varname, int player_num)
@@ -1149,6 +1160,26 @@ static char *LogVar_droppedweaponstr(mvd_info_t *mvd, const char *varname, int p
 	return WeaponNumToName(mvd->players[player_num].last_dropped_weapon);
 }
 
+static char *LogVar_gamedir(mvd_info_t *mvd, const char *varname, int player_num)
+{
+	return mvd->serverinfo.gamedir;
+}
+
+static char *LogVar_maxfps(mvd_info_t *mvd, const char *varname, int player_num)
+{
+	return va("%i", mvd->serverinfo.maxfps);
+}
+
+static char *LogVar_zext(mvd_info_t *mvd, const char *varname, int player_num)
+{
+	return va("%i", mvd->serverinfo.zext);
+}
+
+static char *LogVar_hostname(mvd_info_t *mvd, const char *varname, int player_num)
+{
+	return mvd->serverinfo.hostname;
+}
+
 typedef char * (* logvar_func)(mvd_info_t *mvd, const char *varname, int player_num);
 
 typedef enum logvartype_e
@@ -1192,6 +1223,10 @@ logvar_t logvar_list[] =
 	LOGVAR_DEFINE(matchtime, LOGVAR_DEMO),
 	LOGVAR_DEFINE(mvdframe, LOGVAR_DEMO),
 	LOGVAR_DEFINE(map, LOGVAR_DEMO),
+	LOGVAR_DEFINE(gamedir, LOGVAR_DEMO),
+	LOGVAR_DEFINE(maxfps, LOGVAR_DEMO),
+	LOGVAR_DEFINE(zext, LOGVAR_DEMO),
+	LOGVAR_DEFINE(hostname, LOGVAR_DEMO),
 
 	// Player specific variables.
 	LOGVAR_DEFINE(name, LOGVAR_PLAYER),
@@ -1329,6 +1364,12 @@ char *LogVarValueAsString(mvd_info_t *mvd, const char *varname, int player_num)
 	if (!logvar->func)
 	{
 		Sys_Error("LogVarValueAsString: The log variable function for %s is NULL\n", varname);
+	}
+
+	// A player specific var requires a valid player num.
+	if ((logvar->type == LOGVAR_PLAYER) && ((player_num < 0) || (player_num > 32)))
+	{
+		return "";
 	}
 
 	return logvar->func(mvd, logvar->name, player_num);
