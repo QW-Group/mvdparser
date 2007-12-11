@@ -26,11 +26,15 @@
 #include <errno.h>
 #include <dirent.h>
 
+/* needed for RTC timer */
+#define RTC_RATE 1024.00
+static int rtc_fd;  /* file descriptor for rtc device */
+
 void Sys_InitDoubleTime(void)
 {
 }
 
-double Sys_DoubleTime(void) 
+double Sys_DoubleTime(void)
 {
     // RTC timer vars.
     unsigned long curticks = 0;
@@ -42,14 +46,14 @@ double Sys_DoubleTime(void)
     struct timezone tzp;
     static int secbase;
 
-    if (rtc_fd) 
+    if (rtc_fd)
 	{  /* rtc timer is enabled */
 		pfd.fd = rtc_fd;
 		pfd.events = POLLIN | POLLERR;
 again:
-		if (poll(&pfd, 1, 100000) < 0) 
+		if (poll(&pfd, 1, 100000) < 0)
 		{
-			if ((errno = EINTR)) 
+			if ((errno = EINTR))
 			{
 				// Happens with gdb or signal exiting.
 				goto again;
@@ -60,13 +64,13 @@ again:
 		curticks = curticks >> 8; // knock out info byte.
 		totalticks += curticks;
 		return totalticks / RTC_RATE;
-    } 
-	else 
-	{ 
+    }
+	else
+	{
 		// Old timer.
 		gettimeofday(&tp, &tzp);
 
-		if (!secbase) 
+		if (!secbase)
 		{
 			secbase = tp.tv_sec;
 			return tp.tv_usec / 1000000.0;
