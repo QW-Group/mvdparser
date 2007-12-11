@@ -16,8 +16,8 @@ static char *Info_ValueForKey(char *s, char *key)
 {
 	char pkey[512];
 	static char value[4][512];	// Use two buffers so compares work without stomping on each other.
-	static int	valueindex;
-	char *o;
+	static int	valueindex = 0;
+	char *o = NULL;
 
 	valueindex = (valueindex + 1) % 4;
 	
@@ -27,12 +27,14 @@ static char *Info_ValueForKey(char *s, char *key)
 	while (1) 
 	{
 		o = pkey;
+		
 		while (*s != '\\') 
 		{
 			if (!*s)
 				return "";
 			*o++ = *s++;
 		}
+		
 		*o = 0;
 		s++;
 
@@ -44,6 +46,7 @@ static char *Info_ValueForKey(char *s, char *key)
 				return "";
 			*o++ = *s++;
 		}
+
 		*o = 0;
 
 		if (!strcmp (key, pkey))
@@ -53,6 +56,192 @@ static char *Info_ValueForKey(char *s, char *key)
 			return "";
 		s++;
 	}
+}
+
+void Info_RemoveKey(char *s, char *key) 
+{
+	char *start, pkey[512], value[512], *o;
+
+	if (strstr(key, "\\")) 
+	{
+		Sys_PrintError("Info_RemoveKey: Can't use a key with a \\\n");
+		return;
+	}
+
+	while (1) 
+	{
+		start = s;
+	
+		if (*s == '\\')
+			s++;
+		o = pkey;
+		
+		while (*s != '\\') 
+		{
+			if (!*s)
+				return;
+			*o++ = *s++;
+		}
+
+		*o = 0;
+		s++;
+
+		o = value;
+
+		while (*s != '\\' && *s) 
+		{
+			if (!*s)
+				return;
+			*o++ = *s++;
+		}
+
+		*o = 0;
+
+		if (!strcmp(key, pkey))
+		{
+			strcpy(start, s);	// Remove this part.
+			return;
+		}
+
+		if (!*s)
+			return;
+	}
+}
+
+void Info_RemovePrefixedKeys (char *start, char prefix) 
+{
+	char *s, pkey[512], value[512], *o;
+
+	s = start;
+
+	while (1) 
+	{
+		if (*s == '\\')
+			s++;
+
+		o = pkey;
+
+		while (*s != '\\')
+		{
+			if (!*s)
+				return;
+			*o++ = *s++;
+		}
+		
+		*o = 0;
+		s++;
+
+		o = value;
+		
+		while (*s != '\\' && *s) 
+		{
+			if (!*s)
+				return;
+			*o++ = *s++;
+		}
+
+		*o = 0;
+
+		if (pkey[0] == prefix)
+		{
+			Info_RemoveKey(start, pkey);
+			s = start;
+		}
+
+		if (!*s)
+			return;
+	}
+
+}
+
+void Info_SetValueForStarKey(char *s, char *key, char *value, int maxsize) 
+{
+	char new[1024], *v;
+
+	if (strstr(key, "\\") || strstr(value, "\\")) 
+	{
+		Sys_PrintError("Info_SetValueForStarKey: Can't use keys or values with a \\\n");
+		return;
+	}
+
+	if (strstr(key, "\"") || strstr(value, "\"")) 
+	{
+		Sys_PrintError("Info_SetValueForStarKey: Can't use keys or values with a \"\n");
+		return;
+	}
+
+	if ((strlen(key) >= MAX_INFO_KEY) || (strlen(value) >= MAX_INFO_KEY))
+	{
+		Sys_PrintError("Info_SetValueForStarKey: Keys and values must be < %i characters.\n", MAX_INFO_KEY);
+		return;
+	}
+
+	// This next line is kinda trippy
+	if (*(v = Info_ValueForKey(s, key)))
+	{
+		// Key exists, make sure we have enough room for new value, if we don't, don't change it!
+		if ((int)(strlen(value) - strlen(v) + strlen(s)) >= maxsize) 
+		{
+			Sys_PrintError("Info_SetValueForStarKey: Info string length exceeded\n");
+			return;
+		}
+	}
+
+	Info_RemoveKey(s, key);
+	
+	if (!value || !strlen(value))
+		return;
+
+	snprintf(new, sizeof (new), "\\%s\\%s", key, value);
+
+	if ((int)(strlen(new) + strlen(s)) >= maxsize) 
+	{
+		Sys_PrintError("Info_SetValueForStarKey: Info string length exceeded\n");
+		return;
+	}
+
+	/*
+	// only copy ascii values
+	s += strlen(s);
+	v = new;
+#ifndef CLIENTONLY
+	if (!sv_highchars.value) 
+	{
+		while (*v) 
+		{
+			c = (unsigned char)*v++;
+
+			if (c == ('\\'|128))
+				continue;
+
+			c &= 127;
+	
+			if (c >= 32)
+				*s++ = c;
+		}
+	} 
+	else
+#endif
+	{
+		while (*v) 
+		{
+			c = (unsigned char)*v++;
+			if (c > 13)
+				*s++ = c;
+		}
+		*s = 0;
+	}*/
+}
+
+void Info_SetValueForKey(char *s, char *key, char *value, int maxsize) 
+{
+	if (key[0] == '*') 
+	{
+		Sys_PrintError("Info_SetValueForKey: Can't set * keys\n");
+		return;
+	}
+
+	Info_SetValueForStarKey (s, key, value, maxsize);
 }
 
 __inline qbool check_stat(int item, int player_stat, int value)
@@ -460,7 +649,9 @@ static void NetMsg_Parser_Parse_svc_sound(mvd_info_t *mvd)
 static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 {
 	int level = MSG_ReadByte();
-	char *str = MSG_ReadString();
+	char str[MAX_INFO_STRING];
+
+	strlcpy(str, MSG_ReadString(), sizeof(str)); 
 
 	Sys_PrintDebug(5, "svc_print: (%s) RAW: %s\n", print_strings[level], str);
 	Sys_PrintDebug(1, "svc_print: (%s) %s\n", print_strings[level], Sys_RedToWhite(str));
@@ -478,8 +669,21 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 		}
 		else if (!strncmp(str, "The match is over", 17))
 		{
+			int i;
+
 			mvd->serverinfo.match_ended = true;
 			Log_Event(&logger, mvd, LOG_MATCHEND, -1);
+
+			// HACK :(
+			for (i = 0; i < MAX_PLAYERS; i++)
+			{
+				if (!PLAYER_ISVALID(&mvd->players[i]))
+				{
+					continue;
+				}
+
+				Log_Event(&logger, mvd, LOG_MATCHEND_ALL, i);
+			}
 		}
 		else if (strstr(str, "overtime follows"))
 		{
@@ -498,13 +702,14 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 		else if (!strncmp(str, "time over, the game is a draw", 29))
 		{
 			mvd->serverinfo.match_overtime = true;
-
 		}
 	}
 }
 
 static void NetMsg_Parser_ParseServerInfo(mvd_info_t *mvd)
 {
+	char *hostname = NULL;
+
 	mvd->serverinfo.deathmatch		= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "deathmatch"));
 	mvd->serverinfo.fpd				= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "fpd"));
 	mvd->serverinfo.fraglimit		= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "fraglimit"));
@@ -512,6 +717,14 @@ static void NetMsg_Parser_ParseServerInfo(mvd_info_t *mvd)
 	mvd->serverinfo.teamplay		= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "teamplay"));
 	mvd->serverinfo.maxclients		= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "maxclients"));
 	mvd->serverinfo.maxspectators	= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "maxspectators"));
+	mvd->serverinfo.maxfps			= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "maxfps"));
+	mvd->serverinfo.zext			= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "*z_ext"));
+
+	hostname = Info_ValueForKey(mvd->serverinfo.serverinfo, "hostname");
+	if (strcmp(hostname, ""))
+	{
+		strlcpy(mvd->serverinfo.hostname, hostname, sizeof(mvd->serverinfo.hostname));
+	}
 
 	strlcpy(mvd->serverinfo.mapname, Info_ValueForKey(mvd->serverinfo.serverinfo, "map"), sizeof(mvd->serverinfo.mapname));
 	strlcpy(mvd->serverinfo.serverversion, Info_ValueForKey(mvd->serverinfo.serverinfo, "*version"), sizeof(mvd->serverinfo.serverversion));
@@ -524,6 +737,12 @@ static void NetMsg_Parser_Parse_svc_stufftext(mvd_info_t *mvd)
 
 	if (strstr(stufftext, "fullserverinfo"))
 	{
+		// Get rid of "fullserverinfo".
+		while (*stufftext && (*stufftext != '\\'))
+		{
+			stufftext++;
+		}
+
 		strlcpy(mvd->serverinfo.serverinfo, stufftext, sizeof(mvd->serverinfo.serverinfo));
 		NetMsg_Parser_ParseServerInfo(mvd);
 	}
@@ -572,16 +791,16 @@ static void NetMsg_Parser_Parse_svc_serverdata(mvd_info_t *mvd)
 	Sys_PrintDebug(1, "Gamedir: %s\n", mvd->serverinfo.gamedir);
 	Sys_PrintDebug(1, "Demotime: %g\n", mvd->serverinfo.demotime);
 	Sys_PrintDebug(1, "Levelname: %s\n", mvd->serverinfo.mapname);
-	Sys_PrintDebug(1, "Gravity: %s\n", mvd->serverinfo.movevars.gravity);
-	Sys_PrintDebug(1, "Stopspeed: %s\n", mvd->serverinfo.movevars.stopspeed);
-	Sys_PrintDebug(1, "Maxspeed: %s\n", mvd->serverinfo.movevars.maxspeed);
-	Sys_PrintDebug(1, "Spectator max speed: %s\n", mvd->serverinfo.movevars.spectatormaxspeed);
-	Sys_PrintDebug(1, "Accelerate: %s\n", mvd->serverinfo.movevars.spectatormaxspeed);
-	Sys_PrintDebug(1, "Air accelerate: %s\n", mvd->serverinfo.movevars.airaccelerate);
-	Sys_PrintDebug(1, "Water accelerate: %s\n", mvd->serverinfo.movevars.wateraccelerate);
-	Sys_PrintDebug(1, "Friction: %s\n", mvd->serverinfo.movevars.friction);
-	Sys_PrintDebug(1, "Water friction: %s\n", mvd->serverinfo.movevars.waterfriction);
-	Sys_PrintDebug(1, "Entity gravity: %s\n", mvd->serverinfo.movevars.entgravity);
+	Sys_PrintDebug(1, "Gravity: %g\n", mvd->serverinfo.movevars.gravity);
+	Sys_PrintDebug(1, "Stopspeed: %g\n", mvd->serverinfo.movevars.stopspeed);
+	Sys_PrintDebug(1, "Maxspeed: %g\n", mvd->serverinfo.movevars.maxspeed);
+	Sys_PrintDebug(1, "Spectator max speed: %g\n", mvd->serverinfo.movevars.spectatormaxspeed);
+	Sys_PrintDebug(1, "Accelerate: %g\n", mvd->serverinfo.movevars.accelerate);
+	Sys_PrintDebug(1, "Air accelerate: %g\n", mvd->serverinfo.movevars.airaccelerate);
+	Sys_PrintDebug(1, "Water accelerate: %g\n", mvd->serverinfo.movevars.wateraccelerate);
+	Sys_PrintDebug(1, "Friction: %g\n", mvd->serverinfo.movevars.friction);
+	Sys_PrintDebug(1, "Water friction: %g\n", mvd->serverinfo.movevars.waterfriction);
+	Sys_PrintDebug(1, "Entity gravity: %g\n", mvd->serverinfo.movevars.entgravity);
 }
 
 static void NetMsg_Parser_Parse_svc_lightstyle(void)
@@ -790,10 +1009,10 @@ static void NetMsg_Parser_Parse_svc_updateuserinfo(mvd_info_t *mvd)
 	char *userinfo = NULL;
 	players_t *player = NULL;
 
-	int pnum = MSG_ReadByte ();			// Player.
+	int pnum = MSG_ReadByte();			// Player.
 
 	player = &mvd->players[pnum];
-	player->userid = MSG_ReadLong ();	// Userid.
+	player->userid = MSG_ReadLong();	// Userid.
 
 	userinfo = MSG_ReadString();		// Userinfo string.
 
@@ -849,6 +1068,7 @@ static void NetMsg_Parser_Parse_svc_playerinfo(mvd_info_t *mvd)
 	{
 		if (flags & (DF_ORIGIN << i))
 		{
+			mvd->players[num].prev_origin[i] = mvd->players[num].origin[i];
 			mvd->players[num].origin[i] = MSG_ReadCoord();
 		}
 	}
@@ -955,10 +1175,13 @@ static void NetMsg_Parser_Parse_svc_entgravity(void)
 
 static void NetMsg_Parser_Parse_svc_setinfo(mvd_info_t *mvd)
 {
-	int pnum	= MSG_ReadByte();
-	char *key	= MSG_ReadString();
-	char *value = MSG_ReadString();
+	int pnum = MSG_ReadByte();
+	char key[MAX_INFO_KEY];
+	char value[MAX_INFO_STRING];
 	players_t *player = &mvd->players[pnum];
+
+	strlcpy(key, MSG_ReadString(), sizeof(key));
+	strlcpy(value, MSG_ReadString(), sizeof(value));
 
 	Sys_PrintDebug(2, "svc_setinfo: player: %i name: %s key: \"%s\" value \"%s\"\n", pnum, player->name, key, value);
 	
@@ -971,12 +1194,13 @@ static void NetMsg_Parser_Parse_svc_setinfo(mvd_info_t *mvd)
 
 static void NetMsg_Parser_Parse_svc_serverinfo(mvd_info_t *mvd)
 {
-	int i;
 	char key[MAX_INFO_KEY];
 	char value[MAX_INFO_STRING];
 
 	strlcpy(key, MSG_ReadString(), sizeof(key));
 	strlcpy(value, MSG_ReadString(), sizeof(value));
+
+	Info_SetValueForKey(mvd->serverinfo.serverinfo, key, value, MAX_INFO_STRING);
 
 	if (!mvd->serverinfo.match_started && !strcmp(key, "status") && strcmp(value, "Countdown"))
 	{
@@ -987,6 +1211,8 @@ static void NetMsg_Parser_Parse_svc_serverinfo(mvd_info_t *mvd)
 
 		Log_Event(&logger, mvd, LOG_MATCHSTART, -1);
 	}
+
+	NetMsg_Parser_ParseServerInfo(mvd);
 }
 
 static void NetMsg_Parser_Parse_svc_updatepl(mvd_info_t *mvd)
