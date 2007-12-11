@@ -4,6 +4,14 @@
 
 #include <stdlib.h>
 
+#ifndef max
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+
 #define MAX_PLAYERS				32
 
 #define	MAX_INFO_KEY			64
