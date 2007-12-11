@@ -233,7 +233,7 @@ qbool LoadFragFile(char *filename, qbool quiet)
 	strlcpy(fragfilename, filename, sizeof(fragfilename));
 	COM_ForceExtensionEx(fragfilename, ".dat", sizeof(fragfilename));
 
-	if (!COM_ReadFile(fragfilename, &buffer, NULL) || !buffer)
+	if (!COM_ReadFile(fragfilename, &buffer, (long *)NULL) || !buffer)
 	{
 		if (!quiet)
 			Sys_Error("Couldn't load fragfile \"%s\"\n", fragfilename);

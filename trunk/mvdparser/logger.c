@@ -195,7 +195,7 @@ qbool Log_ParseOutputTemplates(logger_t *logger, const char *template_file)
 
 	int eventlogger_count	= 0;
 	int file_template_count	= 0;
-	char *text				= NULL;
+	byte *text				= NULL;
 	char *line_start		= NULL; // Start of the current line.
 	char *line_end			= NULL; // End of the current line.
 	long filelen			= 0;
@@ -555,10 +555,10 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 
 	int num_written_to				= 0;
 	qbool skip						= false;
-	log_outputfile_t *written_to[128]; // An array containing the files we've already written to. HACK HACK!
-	int n;
+//	log_outputfile_t *written_to[128]; // An array containing the files we've already written to. HACK HACK!
+//	int n;
 	
-	memset(written_to, 0, sizeof(written_to));
+//	memset(written_to, 0, sizeof(written_to));
 
 	// If this event isn't directed at any particular player we still need to expand
 	// player-specific variables in the filenames, since the event should be registered

@@ -40,7 +40,7 @@ void *Q_realloc(void *p, size_t newsize)
 
 char *Q_strdup (const char *src)
 {
-	char *p = _strdup(src);
+	char *p = strdup(src);
 
 	if (!p)
 		Sys_Error ("Q_strdup: Not enough memory free; check disk space\n");
