@@ -409,6 +409,7 @@ typedef struct players_s
 	float	acc_average_speed;				// %avgspeed%
 	float	speed_highest;					// %maxspeed%
 	vec3_t	origin;							// %posx% %posy% %posz%
+	vec3_t	prev_origin;
 	vec3_t	viewangles;						// %pitch% %yaw% 
 	float	distance_moved;					// %distancemoved%
 
@@ -476,6 +477,9 @@ typedef struct server_s
 	qbool		match_ended;
 	qbool		match_overtime;
 	int			overtime_minutes;
+	int			maxfps;
+	int			zext;
+	char		hostname[MAX_INFO_STRING];
 } server_t;
 
 typedef enum log_eventtype_s
