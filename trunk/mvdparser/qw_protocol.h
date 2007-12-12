@@ -362,7 +362,9 @@ typedef struct frame_info_s
 typedef struct players_s
 {
 	char	name[MAX_SCOREBOARDNAME];		// %name%
+	char	name_raw[MAX_SCOREBOARDNAME];	// %nameraw%
 	char	team[MAX_INFO_STRING];			// %team%
+	char	team_raw[MAX_INFO_STRING];		// %teamraw%
 	char	userinfo[MAX_INFO_STRING];		// %userinfo%
 
 	int		pnum;							// %playernum%
@@ -455,7 +457,7 @@ typedef struct movevars_s
 
 typedef struct server_s
 {
-	char		serverinfo[MAX_SERVERINFO_STRING];
+	char		serverinfo[2 * MAX_SERVERINFO_STRING]; // Make it larger than allowed.
 	int			protocol_version;
 	int			servercount;
 	float		demotime;
