@@ -1,4 +1,5 @@
 #include <string.h>
+#include <time.h>
 #include "endian.h"
 #include "maindef.h"
 #include "mvd_parser.h"
@@ -6,6 +7,10 @@
 #include "netmsg_parser.h"
 #include "frag_parser.h"
 #include "logger.h"
+
+#ifdef WIN32
+#include "strptime.h"
+#endif // WIN32
 
 // ========================================================================================
 // HELPER FUNCTITONS
@@ -653,6 +658,8 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 
 	strlcpy(str, MSG_ReadString(), sizeof(str)); 
 
+	// TODO : Check for frag messages spread over several svc_prints older mods/servers does this crap :(
+
 	Sys_PrintDebug(5, "svc_print: (%s) RAW: %s\n", print_strings[level], str);
 	Sys_PrintDebug(1, "svc_print: (%s) %s\n", print_strings[level], Sys_RedToWhite(str));
 	
@@ -663,9 +670,41 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 	{
 		if (!strncmp(str, "matchdate:", 10))
 		{
-			// TODO : Save match start date.
+			// KTX
+			struct tm t;
+
 			// matchdate: Fri Nov 23, 16:33:46 2007
 			// matchdate: 2007-11-23 17:12:44 CET
+			// TODO: Parse timezone.
+			if (strptime(str, "matchdate: %a %b %d, %X %Y", &t) || strptime(str, "matchdate: %Y-%m-%d %X ", &t))
+			{
+				mvd->match_start_year	= t.tm_year + 1900;
+				mvd->match_start_month	= t.tm_mon + 1;
+				mvd->match_start_date	= t.tm_mday;
+				mvd->match_start_hour	= t.tm_hour;
+				mvd->match_start_minute = t.tm_min;
+			}
+		}
+		else if (!strncmp(str, "matchkey:", 9))
+		{
+			// KTPro
+			struct tm t;
+			char *s = str;
+
+			// matchkey: 177-2006-3-19:23-27-20
+			while (*s && (*s != '-'))
+			{
+				s++;
+			}
+
+			if (strptime(s, "-%Y-%m-%d:%H-%M", &t))
+			{
+				mvd->match_start_year	= t.tm_year + 1900;
+				mvd->match_start_month	= t.tm_mon + 1;
+				mvd->match_start_date	= t.tm_mday;
+				mvd->match_start_hour	= t.tm_hour;
+				mvd->match_start_minute = t.tm_min;
+			}
 		}
 		else if (!strncmp(str, "The match is over", 17))
 		{
@@ -688,14 +727,10 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 		else if (strstr(str, "overtime follows"))
 		{
 			char *s = str;
-
-			// "\x90%s\x91 minute%s overtime follows"
-			while (*s != '\x91')
+			while (*s && (*s < '0') && (*s > '9'))
 			{
 				s++;
 			}
-
-			*s = 0;
 
 			mvd->serverinfo.overtime_minutes = atoi(str + 1);
 		}
@@ -1027,14 +1062,18 @@ static void NetMsg_Parser_Parse_svc_updateuserinfo(mvd_info_t *mvd)
 	// Parse the userinfo.
 	{
 		// Name.
-		strlcpy(player->name, Info_ValueForKey(player->userinfo, "name"), sizeof(player->name));
+		strlcpy(player->name_raw, Info_ValueForKey(player->userinfo, "name"), sizeof(player->name));
+		strlcpy(player->name, player->name_raw, sizeof(player->name));
+		Sys_RedToWhite(player->name);
 
 		// Color.
 		player->topcolor	= atoi(Info_ValueForKey(player->userinfo, "topcolor"));
 		player->bottomcolor	= atoi(Info_ValueForKey(player->userinfo, "bottomcolor"));
 		
 		// Team.
-		strlcpy(player->team, Info_ValueForKey(player->userinfo, "team"), sizeof(player->team));
+		strlcpy(player->team_raw, Info_ValueForKey(player->userinfo, "team"), sizeof(player->team));
+		strlcpy(player->team, player->team_raw, sizeof(player->team));
+		Sys_RedToWhite(player->team);
 
 		// Spectator.
 		player->spectator = (qbool)(Info_ValueForKey(player->userinfo, "*spectator")[0]);
@@ -1200,7 +1239,7 @@ static void NetMsg_Parser_Parse_svc_serverinfo(mvd_info_t *mvd)
 	strlcpy(key, MSG_ReadString(), sizeof(key));
 	strlcpy(value, MSG_ReadString(), sizeof(value));
 
-	Info_SetValueForKey(mvd->serverinfo.serverinfo, key, value, MAX_INFO_STRING);
+	Info_SetValueForKey(mvd->serverinfo.serverinfo, key, value, 2 * MAX_INFO_STRING);
 
 	if (!mvd->serverinfo.match_started && !strcmp(key, "status") && strcmp(value, "Countdown"))
 	{
@@ -1240,18 +1279,6 @@ static void NetMsg_Parser_Parse_svc_nails2(void)
 		for (j = 0; j < 6; j++)
 		{
 			MSG_ReadByte();
-		}
-	}
-}
-
-static void NetMsg_Parser_ParseServerinfo(char *key, char *value)
-{
-	if (!strcmp(key, "status"))
-	{
-		if (strcmp(value, "Countdown"))
-		{
-			// TODO : Fix this.
-			//serverinfo.match_started = true;
 		}
 	}
 }
