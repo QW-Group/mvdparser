@@ -553,17 +553,18 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 	log_eventlogger_t *eventlogger	= NULL;
 	log_outputfile_t *output_file	= NULL;
 
+/*
 	int num_written_to				= 0;
 	qbool skip						= false;
-//	log_outputfile_t *written_to[128]; // An array containing the files we've already written to. HACK HACK!
-//	int n;
+	log_outputfile_t *written_to[128]; // An array containing the files we've already written to. HACK HACK!
+	int n;
 	
-//	memset(written_to, 0, sizeof(written_to));
+	memset(written_to, 0, sizeof(written_to));
 
 	// If this event isn't directed at any particular player we still need to expand
 	// player-specific variables in the filenames, since the event should be registered
 	// in all files, even if they're player specific.
-	/*if (player_num < 0)
+	if (player_num < 0)
 	{
 		player_start = 0;
 		player_count = 32;
@@ -687,9 +688,19 @@ static char *LogVar_name(mvd_info_t *mvd, const char *varname, int player_num)
 	return mvd->players[player_num].name;
 }
 
+static char *LogVar_nameraw(mvd_info_t *mvd, const char *varname, int player_num)
+{
+	return mvd->players[player_num].name_raw;
+}
+
 static char *LogVar_team(mvd_info_t *mvd, const char *varname, int player_num)
 {
 	return mvd->players[player_num].team;
+}
+
+static char *LogVar_teamraw(mvd_info_t *mvd, const char *varname, int player_num)
+{
+	return mvd->players[player_num].team_raw;
 }
 
 static char *LogVar_userinfo(mvd_info_t *mvd, const char *varname, int player_num)
@@ -1230,7 +1241,9 @@ logvar_t logvar_list[] =
 
 	// Player specific variables.
 	LOGVAR_DEFINE(name, LOGVAR_PLAYER),
+	LOGVAR_DEFINE(nameraw, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(team, LOGVAR_PLAYER),
+	LOGVAR_DEFINE(teamraw, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(userinfo, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(playernum, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(animframe, LOGVAR_PLAYER),
