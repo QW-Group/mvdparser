@@ -1043,11 +1043,18 @@ static void NetMsg_Parser_Parse_svc_updateuserinfo(mvd_info_t *mvd)
 {
 	char *userinfo = NULL;
 	players_t *player = NULL;
+	int userid = 0;
 
 	int pnum = MSG_ReadByte();			// Player.
 
 	player = &mvd->players[pnum];
-	player->userid = MSG_ReadLong();	// Userid.
+	userid = MSG_ReadLong();			// Userid.
+
+	// All userid should be > 0 ... KTPro resends userinfo with 0 as userid for all players!
+	if (userid != 0)
+	{
+		player->userid = userid;
+	}
 
 	userinfo = MSG_ReadString();		// Userinfo string.
 
@@ -1081,7 +1088,8 @@ static void NetMsg_Parser_Parse_svc_updateuserinfo(mvd_info_t *mvd)
 
 	Sys_PrintDebug(1, "svc_updateuserinfo: Player %i\n", pnum);
 	Sys_PrintDebug(1, "%s\n", player->userinfo);
-	Sys_PrintDebug(1, "name        = %s\n", Sys_RedToWhite(player->name));
+	Sys_PrintDebug(1, "userid      = %i\n", player->userid);
+	Sys_PrintDebug(1, "name        = %s\n", player->name);
 	Sys_PrintDebug(1, "team        = %s\n", player->team);
 	Sys_PrintDebug(1, "topcolor    = %i\n", player->topcolor);
 	Sys_PrintDebug(1, "bottomcolor = %i\n", player->bottomcolor);
