@@ -579,6 +579,8 @@ void Frags_Parse(mvd_info_t *mvd, char *fragmessage, int level)
 		return;
 	}
 
+	Sys_PrintDebug(6, "Frags_Parse: \"%s\"\n", fragmessage);
+
 	// Find the frag message.
 	for (i = 0; i < fragdefs.num_fragmsgs; i++)
 	{
@@ -652,6 +654,12 @@ void Frags_Parse(mvd_info_t *mvd, char *fragmessage, int level)
 	if (p1 && !p2)
 	{
 		p2 = p1;
+	}
+
+	if (!p1 && !p2)
+	{
+		Sys_PrintError("Frags_Parse: Error found no player for fragmessage \"%s\"\n", fragmessage);
+		return;
 	}
 
 	switch (mess->type)
