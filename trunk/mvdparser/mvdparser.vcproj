@@ -216,6 +216,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\strptime.c"
+				>
+			</File>
+			<File
 				RelativePath=".\sys_win.c"
 				>
 			</File>
@@ -259,6 +263,10 @@
 			</File>
 			<File
 				RelativePath=".\stats.h"
+				>
+			</File>
+			<File
+				RelativePath=".\strptime.h"
 				>
 			</File>
 		</Filter>
