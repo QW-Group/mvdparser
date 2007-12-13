@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
+#include <time.h>
 #include "stats.h"
 
 #define	PROTOCOL_VERSION	28
@@ -367,6 +368,8 @@ typedef struct players_s
 	char	team_raw[MAX_INFO_STRING];		// %teamraw%
 	char	userinfo[MAX_INFO_STRING];		// %userinfo%
 
+	char	client[MAX_INFO_STRING];		// %client%
+
 	int		pnum;							// %playernum%
 	int		frame;							// %frame%
 	int		userid;							// %userid%
@@ -482,6 +485,7 @@ typedef struct server_s
 	int			maxfps;
 	int			zext;
 	char		hostname[MAX_INFO_STRING];
+	char		mod[MAX_INFO_STRING];
 } server_t;
 
 typedef enum log_eventtype_s
@@ -528,6 +532,7 @@ typedef struct mvd_info_s
 	char			*sndlist[1024];
 	server_t		serverinfo;
 
+	struct tm		match_start_date_full;
 	int				match_start_date;
 	int				match_start_month;
 	int				match_start_year;
