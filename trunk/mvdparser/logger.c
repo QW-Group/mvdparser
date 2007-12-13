@@ -1056,6 +1056,13 @@ static char *LogVar_bottomcolor(mvd_info_t *mvd, const char *varname, int player
 	return va("%i", mvd->players[player_num].bottomcolor);
 }
 
+static char *LogVar_matchstartfulldate(mvd_info_t *mvd, const char *varname, int player_num)
+{
+	static char buf[128];
+	strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M", &mvd->match_start_date_full);
+	return buf;
+}
+
 static char *LogVar_matchstartdate(mvd_info_t *mvd, const char *varname, int player_num)
 {
 	return va("%i", mvd->match_start_date);
@@ -1191,6 +1198,16 @@ static char *LogVar_hostname(mvd_info_t *mvd, const char *varname, int player_nu
 	return mvd->serverinfo.hostname;
 }
 
+static char *LogVar_mod(mvd_info_t *mvd, const char *varname, int player_num)
+{
+	return mvd->serverinfo.mod;
+}
+
+static char *LogVar_client(mvd_info_t *mvd, const char *varname, int player_num)
+{
+	return mvd->players[player_num].client;
+}
+
 typedef char * (* logvar_func)(mvd_info_t *mvd, const char *varname, int player_num);
 
 typedef enum logvartype_e
@@ -1214,6 +1231,7 @@ logvar_t logvar_list[] =
 {
 	// Demo variables.
 	LOGVAR_DEFINE(demoname, LOGVAR_DEMO),
+	LOGVAR_DEFINE(matchstartfulldate, LOGVAR_DEMO),
 	LOGVAR_DEFINE(matchstartdate, LOGVAR_DEMO),
 	LOGVAR_DEFINE(matchstartmonth, LOGVAR_DEMO),
 	LOGVAR_DEFINE(matchstartyear, LOGVAR_DEMO),
@@ -1238,8 +1256,10 @@ logvar_t logvar_list[] =
 	LOGVAR_DEFINE(maxfps, LOGVAR_DEMO),
 	LOGVAR_DEFINE(zext, LOGVAR_DEMO),
 	LOGVAR_DEFINE(hostname, LOGVAR_DEMO),
+	LOGVAR_DEFINE(mod, LOGVAR_DEMO),
 
 	// Player specific variables.
+	LOGVAR_DEFINE(client, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(name, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(nameraw, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(team, LOGVAR_PLAYER),
