@@ -678,11 +678,12 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 			// TODO: Parse timezone.
 			if (strptime(str, "matchdate: %a %b %d, %X %Y", &t) || strptime(str, "matchdate: %Y-%m-%d %X ", &t))
 			{
-				mvd->match_start_year	= t.tm_year + 1900;
-				mvd->match_start_month	= t.tm_mon + 1;
-				mvd->match_start_date	= t.tm_mday;
-				mvd->match_start_hour	= t.tm_hour;
-				mvd->match_start_minute = t.tm_min;
+				mvd->match_start_date_full	= t;
+				mvd->match_start_year		= t.tm_year + 1900;
+				mvd->match_start_month		= t.tm_mon + 1;
+				mvd->match_start_date		= t.tm_mday;
+				mvd->match_start_hour		= t.tm_hour;
+				mvd->match_start_minute		= t.tm_min;
 			}
 		}
 		else if (!strncmp(str, "matchkey:", 9))
@@ -699,11 +700,12 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 
 			if (strptime(s, "-%Y-%m-%d:%H-%M", &t))
 			{
-				mvd->match_start_year	= t.tm_year + 1900;
-				mvd->match_start_month	= t.tm_mon + 1;
-				mvd->match_start_date	= t.tm_mday;
-				mvd->match_start_hour	= t.tm_hour;
-				mvd->match_start_minute = t.tm_min;
+				mvd->match_start_date_full	= t;
+				mvd->match_start_year		= t.tm_year + 1900;
+				mvd->match_start_month		= t.tm_mon + 1;
+				mvd->match_start_date		= t.tm_mday;
+				mvd->match_start_hour		= t.tm_hour;
+				mvd->match_start_minute		= t.tm_min;
 			}
 		}
 		else if (!strncmp(str, "The match is over", 17))
@@ -743,7 +745,8 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 
 static void NetMsg_Parser_ParseServerInfo(mvd_info_t *mvd)
 {
-	char *hostname = NULL;
+	char *tmp = NULL;
+	char *tmp2 = NULL;
 
 	mvd->serverinfo.deathmatch		= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "deathmatch"));
 	mvd->serverinfo.fpd				= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "fpd"));
@@ -755,10 +758,20 @@ static void NetMsg_Parser_ParseServerInfo(mvd_info_t *mvd)
 	mvd->serverinfo.maxfps			= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "maxfps"));
 	mvd->serverinfo.zext			= atoi(Info_ValueForKey(mvd->serverinfo.serverinfo, "*z_ext"));
 
-	hostname = Info_ValueForKey(mvd->serverinfo.serverinfo, "hostname");
-	if (strcmp(hostname, ""))
+	tmp = Info_ValueForKey(mvd->serverinfo.serverinfo, "hostname");
+	if (strcmp(tmp, ""))
 	{
-		strlcpy(mvd->serverinfo.hostname, hostname, sizeof(mvd->serverinfo.hostname));
+		strlcpy(mvd->serverinfo.hostname, tmp, sizeof(mvd->serverinfo.hostname));
+	}
+
+	// Look for mod.
+	if (strcmp(tmp = Info_ValueForKey(mvd->serverinfo.serverinfo, "kmod"), ""))
+	{
+		snprintf(mvd->serverinfo.mod, sizeof(mvd->serverinfo.mod), "KTPro %s build %s", tmp, Info_ValueForKey(mvd->serverinfo.serverinfo, "kbuild"));
+	}
+	else if (strcmp(tmp = Info_ValueForKey(mvd->serverinfo.serverinfo, "xmod"), ""))
+	{
+		snprintf(mvd->serverinfo.mod, sizeof(mvd->serverinfo.mod), "KTX %s build %s", tmp, Info_ValueForKey(mvd->serverinfo.serverinfo, "xbuild"));
 	}
 
 	strlcpy(mvd->serverinfo.mapname, Info_ValueForKey(mvd->serverinfo.serverinfo, "map"), sizeof(mvd->serverinfo.mapname));
@@ -1041,6 +1054,7 @@ static void NetMsg_Parser_Parse_svc_muzzleflash(void)
 
 static void NetMsg_Parser_Parse_svc_updateuserinfo(mvd_info_t *mvd)
 {
+	char *tmp = NULL;
 	char *userinfo = NULL;
 	players_t *player = NULL;
 	int userid = 0;
@@ -1084,6 +1098,15 @@ static void NetMsg_Parser_Parse_svc_updateuserinfo(mvd_info_t *mvd)
 
 		// Spectator.
 		player->spectator = (qbool)(Info_ValueForKey(player->userinfo, "*spectator")[0]);
+
+		if (strcmp((tmp = Info_ValueForKey(player->userinfo, "*client")), ""))
+		{
+			strlcpy(player->client, tmp, sizeof(player->client));
+		}
+		else if (strcmp((tmp = Info_ValueForKey(player->userinfo, "*FuhQuake")), ""))
+		{
+			snprintf(player->client, sizeof(player->client), "FuhQuake %s", tmp);
+		}
 	}
 
 	Sys_PrintDebug(1, "svc_updateuserinfo: Player %i\n", pnum);
