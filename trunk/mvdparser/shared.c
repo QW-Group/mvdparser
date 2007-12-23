@@ -71,10 +71,10 @@ char *Sys_RedToWhite(char *txt)
 			*s &= ~128;	// Remove the highest bit in the byte (which makes the text red).
 		}
 
-		// Get rid of bell chars (ASCII 7), printf will beep otherwise :)
-		if (*s == (char)0x7)
+		// Get rid of undefined unicode characters.
+		if (((*s >= 0) && (*s <= 31)) || ((*s >= 127) && (*s <= 159)))
 		{
-			*s = ' ';
+			*s = '_';
 		}
 
 		s++;
