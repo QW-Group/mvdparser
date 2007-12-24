@@ -424,6 +424,8 @@ typedef struct players_s
 	int		bottomcolor;					// %bottomcolor%
 
 	qbool	teamkill_flag;
+	
+	qbool	is_ghost;						// Is this player a "ghost" which is created when a player leaves in the middle of a game?
 } players_t;
 
 typedef struct fragstats_s
@@ -486,6 +488,8 @@ typedef struct server_s
 	int			zext;
 	char		hostname[MAX_INFO_STRING];
 	char		mod[MAX_INFO_STRING];
+	qbool		player_timed_out;
+	int			player_timout_frame;
 } server_t;
 
 typedef enum log_eventtype_s

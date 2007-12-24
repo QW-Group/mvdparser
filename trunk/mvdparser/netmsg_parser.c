@@ -740,6 +740,14 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 		{
 			mvd->serverinfo.match_overtime = true;
 		}
+		else if (strstr(str, "left the game with"))
+		{
+			// A player left the game in the middle of a match, we need to keep track
+			// of the ghost player that is created straight after this event.
+			mvd->serverinfo.player_timed_out = true;
+			mvd->serverinfo.player_timout_frame	= mvd->frame_count;
+			Sys_PrintDebug(1, "Warning: Player timed out!");
+		}
 	}
 }
 
@@ -860,7 +868,9 @@ static void NetMsg_Parser_Parse_svc_lightstyle(void)
 static void NetMsg_Parser_Parse_svc_updatefrags(mvd_info_t *mvd)
 {
 	int pnum = MSG_ReadByte();					// Player.
+	Sys_PrintDebug(2, "svc_updatefrags: Pnum = %i Userid = %i Name = %s Prev = %i ", pnum, mvd->players[pnum].userid, mvd->players[pnum].name, mvd->players[pnum].frags);
 	mvd->players[pnum].frags = MSG_ReadShort();	// Frags.
+	Sys_PrintDebug(2, "New = %i\n", mvd->players[pnum].frags);
 }
 
 static void NetMsg_Parser_Parse_svc_stopsound(void)
@@ -1054,10 +1064,11 @@ static void NetMsg_Parser_Parse_svc_muzzleflash(void)
 
 static void NetMsg_Parser_Parse_svc_updateuserinfo(mvd_info_t *mvd)
 {
-	char *tmp = NULL;
-	char *userinfo = NULL;
-	players_t *player = NULL;
-	int userid = 0;
+	char *tmp			= NULL;
+	char *userinfo		= NULL;
+	players_t *player	= NULL;
+	int userid			= 0;
+	qbool isGhost		= false;
 
 	int pnum = MSG_ReadByte();			// Player.
 
@@ -1068,6 +1079,22 @@ static void NetMsg_Parser_Parse_svc_updateuserinfo(mvd_info_t *mvd)
 	if (userid != 0)
 	{
 		player->userid = userid;
+	}
+
+	// A player just timed out, this userinfo will be the ghost that is created.
+	// HACK: Checking for ghosts this way is somewaht of a hack, but I can't come up with a better solution, don't have enough info :(
+	if (mvd->serverinfo.player_timed_out)
+	{
+		Sys_PrintDebug(1, "svc_updateuserinfo: Saving ghost info\n");
+		
+		if (mvd->serverinfo.player_timout_frame != mvd->frame_count)
+		{
+			Sys_PrintDebug(1, "svc_updateuserinfo: WARNING: Ghost userinfo was not sent the same frame as the user left, might label player as a ghost incorrectly!\n");
+		}
+
+		mvd->serverinfo.player_timed_out = false;
+
+		player->is_ghost = true;
 	}
 
 	userinfo = MSG_ReadString();		// Userinfo string.

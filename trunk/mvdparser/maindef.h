@@ -22,7 +22,7 @@
 #define	MAX_QPATH			64		// max length of a quake game pathname
 #define	MAX_OSPATH			128		// max length of a filesystem pathname
 
-#define PLAYER_ISVALID(player) ((player)->name && !(player)->spectator)
+#define PLAYER_ISVALID(player) ((player)->name && !(player)->spectator && !(player)->is_ghost)
 
 #define GREEN_ARMOR_BIT			13
 #define GREEN_ARMOR				1
