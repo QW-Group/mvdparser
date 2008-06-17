@@ -354,6 +354,7 @@ qbool Log_ParseOutputTemplates(logger_t *logger, const char *template_file)
 				}
 			}
 
+			// We couldn't find a file template with this ID, so skip to next row.
 			if (!file_template)
 			{
 				Sys_PrintError("Warning! Output templates parsing: #OUTPUT: Found no output file template with id \"%s\" (line %i)\n", file_template_id, line);
