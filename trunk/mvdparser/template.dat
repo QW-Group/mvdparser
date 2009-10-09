@@ -1,0 +1,130 @@
+
+////////////////////////////////////////////////////////////
+
+#FILE server %demoname%-server.log
+
+#EVENT MATCHEND	0
+hostname=%hostname%
+description=""
+address=""
+#EVENT_END
+
+#OUTPUT		0	server
+
+////////////////////////////////////////////////////////////
+
+#FILE map %demoname%-map.log
+
+#EVENT MATCHEND 1
+map=%map%
+#EVENT_END
+
+#OUTPUT	1 map
+
+////////////////////////////////////////////////////////////
+
+#FILE serversettings %demoname%-serversettings.log
+
+// STR_TO_DATE('%matchstartyear%-%matchstartmonth%-%matchstartdate% %matchstarthour%:%matchstartminute%', '%%Y-%%c-%%e %%k:%%i')
+
+#EVENT MATCHEND	2
+gamedir=%gamedir%
+serverinfo=%serverinfo%
+fraglimit=%fraglimit%
+timelimit=%timelimit%
+deathmatch=%deathmatchmode%
+maxfps=%maxfps%
+teamplay=%teamplay%
+z_ext=%zext%
+fpd=%fpd%
+maxclients=%maxclients%
+maxspectators=%maxspectators%
+watervis=%watervis%
+gametype=unknown
+version=%serverversion%
+mod=%mod%
+#EVENT_END
+
+#OUTPUT	2 serversettings
+
+////////////////////////////////////////////////////////////
+
+#FILE demo %demoname%-demo.log
+
+#EVENT MATCHEND	3
+mvdframe=%mvdframe%
+demotime=%demotime%
+matchstartdate=%matchstartfulldate%
+#EVENT_END
+
+#OUTPUT 3 demo
+
+////////////////////////////////////////////////////////////
+
+#FILE player %demoname%-%playernum%-player.log
+
+#EVENT MATCHEND_ALL 4
+client=%client%
+name=%name%
+name_raw=%nameraw%
+player_num=%playernum%
+player_id=%playerid%
+frags=%frags%
+spectator=%spectator%
+userinfo=%userinfo%
+top_color=%topcolor%
+bottom_color=%bottomcolor%
+teamname=%team%
+teamname_raw=%teamraw%
+deaths=%deaths%
+avg_packetloss=%avgpl%
+max_packetloss=%maxpl%
+min_packetloss=%minpl%
+avg_ping=%avgping%
+max_ping=%maxping%
+min_ping=%minping%
+ga_count=%gacount%
+ya_count=%yacount%
+ra_count=%racount%
+ssg_count=%ssgcount%
+ng_count=%ngcount%
+sng_count=%sngcount%
+gl_count=%glcount%
+rl_count=%rlcount%
+lg_count=%lgcount%
+ssg_drop=%ssgdrop%
+ng_drop=%ngdrop%
+sng_drop=%sngdrop%
+gl_drop=%gldrop%
+rl_drop=%rldrop%
+lg_drop=%lgdrop%
+sg_shots=%sgshots%
+ssg_shots=%ssgshots%
+ng_shots=%ngshots%
+sng_shots=%sngshots%
+gl_shots=%glshots%
+rl_shots=%rlshots%
+lg_shots=%lgshots%
+mh_count=%mhcount%
+quad_count=%quadcount%
+pent_count=%pentcount%
+ring_count=%ringcount%
+avg_speed=%avgspeed%
+max_speed=%maxspeed%
+distance_moved=%distancemoved%
+#EVENT_END
+
+#OUTPUT	4 player
+
+////////////////////////////////////////////////////////////
+
+#FILE events %demoname%-%playernum%-events.log
+
+#EVENT DEATH	5
+demotime=%demotime%;matchtime=%matchtime%;quake_loc_x=%posx%;quake_loc_y=%posy%;quake_loc_z=%posz%;player=%playernum%;type=DEATH
+#EVENT_END
+
+#OUTPUT		5	events
+
+////////////////////////////////////////////////////////////
+
