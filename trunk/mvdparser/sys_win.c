@@ -4,7 +4,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <mmsystem.h>
+#include <limits.h>
+#include "strptime.h"
 #include "maindef.h"
+#include <signal.h>
 
 static double pfreq;
 static qbool hwtimer;
@@ -64,5 +67,6 @@ double Sys_DoubleTime (void)
 
 	return (now - starttime) / 1000.0;
 }
+
 
 
