@@ -549,7 +549,7 @@ nextline:
 
 		fragdefs.active = true;
 		if (!quiet)
-			Sys_PrintError("Loaded fragfile \"%s\" (%d frag defs)\n", fragfilename, fragdefs.num_fragmsgs);
+			Sys_PrintDebug(1, "Loaded fragfile \"%s\" (%d frag defs)\n", fragfilename, fragdefs.num_fragmsgs);
 		goto finish;
 	} 
 	else 

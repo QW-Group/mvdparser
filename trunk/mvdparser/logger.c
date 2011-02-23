@@ -1060,6 +1060,7 @@ static char *LogVar_bottomcolor(mvd_info_t *mvd, const char *varname, int player
 static char *LogVar_matchstartfulldate(mvd_info_t *mvd, const char *varname, int player_num)
 {
 	static char buf[128];
+	//TODO: allow user defined format (my demos use  %Y%m%d-%H%M%S for example - deurk)
 	strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M", &mvd->match_start_date_full);
 	return buf;
 }

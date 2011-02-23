@@ -9,7 +9,17 @@ cmdline_params_t cmdargs;
 
 void ShowHelp(char *filename)
 {
-	printf("MVD Parser version 0.1 (c) Joakim Söderberg\n");
+	printf("MVD Parser, version 0.1\n");
+	printf("(c) Joakim S?derberg\n");
+	printf("\n");
+	printf("Usage:\n");
+	printf("  %s [-f <fragfile>] [-t <template>] [-v[v[v]]] <demoname>\n", filename);
+	printf("\n");
+	printf("Options:\n");
+	printf("    -f: load your own defined fragfile (fragfile.dat by default)\n");
+	printf("    -t: load your own defined log template (template.dat by default)\n");
+	printf("    -v: script debugging (use -vv or -vvv for extra verbosity)\n");
+	printf("\n");
 }
 
 qbool Cmdline_Parse(int argc, char **argv)
@@ -54,6 +64,11 @@ qbool Cmdline_Parse(int argc, char **argv)
 					if (next_arg < argc)
 					{
 						cmdargs.frag_file = Q_strdup(argv[next_arg]);
+						i++;
+					}
+					else
+					{
+						Sys_PrintError("-t: No fragfile specified\n");
 					}
 
 					break;
@@ -65,6 +80,7 @@ qbool Cmdline_Parse(int argc, char **argv)
 					if (next_arg < argc)
 					{
 						cmdargs.template_file = Q_strdup(argv[next_arg]);
+						i++;
 					}
 					else
 					{
@@ -151,7 +167,7 @@ int main(int argc, char **argv)
 			char *demopath = cmdargs.mvd_files[i];
 
 			// Parse the demo.
-			Sys_Print("Starting to parse %s\n", cmdargs.mvd_files[i]);
+			Sys_PrintDebug(1, "Starting to parse %s\n", cmdargs.mvd_files[i]);
 			MVD_Parser_StartParse(demopath, mvd_data, mvd_len);
 		}
 
