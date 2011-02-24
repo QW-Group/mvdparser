@@ -676,8 +676,7 @@ void Frags_Parse(mvd_info_t *mvd, char *fragmessage, int level)
 		{
 			mvd->fragstats[p1->pnum].suicides++;
 			p1->death_count++;
-			Log_Event(&logger, mvd, LOG_DEATH, p1->pnum);
-			printf("Suicide counted for %s, now %d\n", p1->name, mvd->fragstats[p1->pnum].suicides);
+			Log_Event(&logger, mvd, LOG_DEATH, p1->pnum);			
 			break;
 		}
 		case mt_fragged :
