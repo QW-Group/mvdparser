@@ -4,6 +4,7 @@
 #include "maindef.h"
 #include "qw_protocol.h"
 #include "mvd_parser.h"
+#include "logger.h"
 
 #define FUH_FRAGFILE_VERSION_1_00	"1.00"			// For compatibility with fuh.
 #define FRAGFILE_VERSION_1_00		"ezquake-1.00"	// Fuh suggest such format.
@@ -674,6 +675,9 @@ void Frags_Parse(mvd_info_t *mvd, char *fragmessage, int level)
 		case mt_suicide :
 		{
 			mvd->fragstats[p1->pnum].suicides++;
+			p1->death_count++;
+			Log_Event(&logger, mvd, LOG_DEATH, p1->pnum);
+			printf("Suicide counted for %s, now %d\n", p1->name, mvd->fragstats[p1->pnum].suicides);
 			break;
 		}
 		case mt_fragged :
