@@ -184,6 +184,12 @@ static void MVD_Parser_StatsGather(mvd_info_t *mvd)
 			//VectorSubtract(cf->origin, lf->origin, dv);
 			VectorSubtract(cf->origin, cf->prev_origin, dv);
 
+			// Log a movement if the origin has changed since last.
+			if ((dv[0] != 0) || (dv[1] != 0) || (dv[2] != 0))
+			{
+				Log_Event(&logger, mvd, LOG_MOVE, cf->pnum);
+			}
+
 			// Calculate the distance moved.
 			distance = (float)sqrt(pow(dv[0], 2) + pow(dv[1], 2) + pow(dv[2], 2));
 
