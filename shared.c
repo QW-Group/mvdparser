@@ -186,7 +186,7 @@ size_t strlcat(char *dst, const char *src, size_t siz)
 	return(dlen + (s - src));       /* count does not include NUL */
 }
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 int snprintf(char *buffer, size_t count, char const *format, ...)
 {
 	int ret;
@@ -209,7 +209,7 @@ int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr)
 	return ret;
 }
 */
-#endif // _WIN32
+#endif // _MSC_VER
 
 // A Case-insensitive strstr.
 char *strstri(const char *text, const char *find)
