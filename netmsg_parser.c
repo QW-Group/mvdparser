@@ -249,7 +249,7 @@ void Info_SetValueForKey(char *s, char *key, char *value, int maxsize)
 	Info_SetValueForStarKey (s, key, value, maxsize);
 }
 
-__inline qbool check_stat(int item, int player_stat, int value)
+qbool check_stat(int item, int player_stat, int value)
 {
 	return ((value & item) && !(player_stat & item));
 }
