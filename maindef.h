@@ -96,7 +96,7 @@ void Sys_PrintError(char *format, ...);
 size_t strlcpy(char *dst, const char *src, size_t siz);
 #endif
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 int snprintf(char *buffer, size_t count, char const *format, ...);
 //int vsnprintf(char *buffer, size_t count, const char *format, va_list argptr);
 #endif
