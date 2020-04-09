@@ -102,7 +102,7 @@ after_success:
   - if [ -n "${TRAVIS_TAG}" ]; then cp build/${BINARY} upload/releases/latest/${OS}/${ARCH}/${BINARY} ;fi
   - if [ -n "${TRAVIS_TAG}" ]; then cp build/${CHECKSUM} upload/releases/latest/${OS}/${ARCH}/${CHECKSUM} ;fi
   # add SFTP authentication key to the build environment
-  - openssl aes-256-cbc -K $encrypted_1e5406d6c11a_key -iv $encrypted_1e5406d6c11a_iv -in mvdparser_build.key.enc -out mvdparser_build.key -d
+  - openssl aes-256-cbc -K $encrypted_2be706a63e31_key -iv $encrypted_2be706a63e31_iv -in mvdparser_builds.key.enc -out mvdparser_builds.key -d
   # set correct permissions on private key
   - chmod 600 mvdparser_builds.key
   # push built items to SFTP storage
