@@ -9,7 +9,7 @@ cmdline_params_t cmdargs;
 
 void ShowHelp(char *filename)
 {
-	printf("MVD Parser, version 0.1\n");
+	printf("MVD Parser, version 0.1 (build %s)\n", GIT_COMMIT);
 	printf("(c) Joakim S?derberg\n");
 	printf("\n");
 	printf("Usage:\n");

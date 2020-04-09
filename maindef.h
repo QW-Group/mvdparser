@@ -12,6 +12,8 @@
 #define min(a,b)            (((a) < (b)) ? (a) : (b))
 #endif
 
+#define GIT_COMMIT "unknown"
+
 #define MAX_PLAYERS				32
 
 #define	MAX_INFO_KEY			64
