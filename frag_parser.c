@@ -681,8 +681,12 @@ void Frags_Parse(mvd_info_t *mvd, char *fragmessage, int level)
 		case mt_suicide :
 		{
 			mvd->fragstats[p1->pnum].suicides++;
-			p1->death_count++;
-			Log_Event(&logger, mvd, LOG_DEATH, p1->pnum);			
+
+			// If it's a normal suicide then it'll get picked up by health < 0
+			if (!mess->wclass_index) {
+				p1->death_count++;
+				Log_Event(&logger, mvd, LOG_DEATH, p1->pnum);
+			}
 			break;
 		}
 		case mt_fragged :
