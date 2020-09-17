@@ -709,6 +709,16 @@ void Log_OutputFilesHashTable_Clear(logger_t *logger)
 //								Log variables
 // ============================================================================
 
+static char* LogVar_suicides(mvd_info_t* mvd, const char* varname, int player_num)
+{
+	return va("%d", mvd->fragstats[player_num].suicides);
+}
+
+static char* LogVar_teamkills(mvd_info_t* mvd, const char* varname, int player_num)
+{
+	return va("%d", mvd->fragstats[player_num].teamkills);
+}
+
 static char *LogVar_name(mvd_info_t *mvd, const char *varname, int player_num)
 {
 	return mvd->players[player_num].name;
@@ -1360,7 +1370,9 @@ logvar_t logvar_list[] =
 	LOGVAR_DEFINE(topcolor, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(bottomcolor, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(droppedweapon, LOGVAR_PLAYER),
-	LOGVAR_DEFINE(droppedweaponstr, LOGVAR_PLAYER)
+	LOGVAR_DEFINE(droppedweaponstr, LOGVAR_PLAYER),
+	LOGVAR_DEFINE(teamkills, LOGVAR_PLAYER),
+	LOGVAR_DEFINE(suicides, LOGVAR_PLAYER)
 };
 
 #define LOGVARS_LIST_SIZE		(sizeof(logvar_list) / sizeof(logvar_t))
