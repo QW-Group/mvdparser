@@ -6,7 +6,7 @@
 
 logger_t logger;
 
-char *LogVarValueAsString(mvd_info_t *mvd, const char *varname, int player_num);
+char *LogVarValueAsString(mvd_info_t *mvd, const char *varname, int player_num, encoding_mode_t encoding);
 
 #define LOG_CHECK_NUMARGS(num)																						\
 {																													\
@@ -412,7 +412,7 @@ qbool Log_ParseOutputTemplates(logger_t *logger, const char *template_file)
 	return true;
 }
 
-char *Log_ExpandTemplateString(logger_t *logger, mvd_info_t *mvd, const char *template_string, int player_num, int *output_len)
+char *Log_ExpandTemplateString(logger_t *logger, mvd_info_t *mvd, const char *template_string, int player_num, int *output_len, encoding_mode_t encoding)
 {
 	char var_value[1024];
 	char tmp[1024];
@@ -466,7 +466,7 @@ char *Log_ExpandTemplateString(logger_t *logger, mvd_info_t *mvd, const char *te
 
 				// Expand the variable based on the current mvd context / player.
 				snprintf(tmp, min((var_end - var_start), sizeof(tmp)), "%s", var_start);
-				strlcpy(var_value, LogVarValueAsString(mvd, tmp, player_num), sizeof(var_value));
+				strlcpy(var_value, LogVarValueAsString(mvd, tmp, player_num, encoding), sizeof(var_value));
 
 				// Add the value to the output string.
 				vv = var_value;
@@ -554,10 +554,11 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 	int i;
 	int j;
 	int p;
+	int e;
 	int player_start				= player_num;
 	int player_count				= 1;
-	int output_len					= 0;
-	char *output					= NULL;
+	int output_len[encoding_count]	= { 0, 0, 0 };
+	char *output[encoding_count]    = { NULL };
 	char *expanded_filename			= NULL;
 	log_eventlogger_t *eventlogger	= NULL;
 	log_outputfile_t *output_file	= NULL;
@@ -590,7 +591,10 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 		}
 
 		// Expand the event loggers template string into an output string.
-		output = Q_strdup(Log_ExpandTemplateString(logger, mvd, eventlogger->output_template_string, player_num, &output_len));
+		for (j = 0; j < encoding_count; ++j) {
+			output_len[j] = 0;
+			output[j] = Q_strdup(Log_ExpandTemplateString(logger, mvd, eventlogger->output_template_string, player_num, &output_len[j], j));
+		}
 
 		// See the above comment for setting player_count for explination.
 		// TODO : Make this more readable by making the stuff inside the for-loop a separate function, and calling it in two separate if-cases instead.
@@ -605,7 +609,7 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 			// and then write the output to the files.
 			for (j = 0; j < eventlogger->templates_count; j++)
 			{
-				expanded_filename = Log_ExpandTemplateString(logger, mvd, eventlogger->outputfile_templates[j]->name, p, NULL);
+				expanded_filename = Log_ExpandTemplateString(logger, mvd, eventlogger->outputfile_templates[j]->name, p, NULL, normal_encoding);
 
 				// Search for the expanded filename in the output_hashtable.
 				output_file = Log_OutputFilesHashTable_GetValue(logger, expanded_filename);
@@ -617,11 +621,23 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 					output_file->filename = Q_strdup(expanded_filename);
 					output_file->file = fopen(expanded_filename, "w");
 
+					if (strstr(expanded_filename, ".xml")) {
+						output_file->encoding = xml_encoding;
+					}
+					else if (strstr(expanded_filename, ".json")) {
+						output_file->encoding = json_encoding;
+					}
+					else {
+						output_file->encoding = normal_encoding;
+					}
+
 					if (!output_file->file)
 					{
 						Q_free(output_file->filename);
 						Q_free(output_file);
-						Q_free(output);
+						for (j = 0; j < encoding_count; ++j) {
+							Q_free(output[j]);
+						}
 						Sys_Error("Log_Event: Failed to open the file %s (expanded from %s) for output.\n", output_file->filename, eventlogger->outputfile_templates[j]->name); 
 					}
 
@@ -652,17 +668,18 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 					num_written_to++;
 				}*/
 
-				if (output_len > 0)
-				{
+				if (output_len[output_file->encoding] > 0) {
 					// Write the expanded output to the file.
-					fwrite(output, sizeof(char), output_len, output_file->file); 
+					fwrite(output[output_file->encoding], sizeof(char), output_len[output_file->encoding], output_file->file);
 					fflush(output_file->file);
 				}
 			}
 		}
 	}
 
-	Q_free(output);
+	for (j = 0; j < encoding_count; ++j) {
+		Q_free(output[j]);
+	}
 }
 
 void Log_OutputFilesHashTable_Clear(logger_t *logger)
@@ -1388,7 +1405,140 @@ void LogVarHashTable_AddValue(logvar_t **hashtable, logvar_t *logvar)
 	}
 }
 
-char *LogVarValueAsString(mvd_info_t *mvd, const char *varname, int player_num)
+#define MAX_STRINGS 128
+
+static char* json_string(const char* input)
+{
+	// >>>> like va(...) ... eugh
+	static char	string[MAX_STRINGS][1024];
+	static int index = 0;
+	char* ch, * start;
+
+	index %= MAX_STRINGS;
+	// <<<<
+
+	start = ch = string[index++];
+	while (*input) {
+		unsigned char current = *input;
+
+		if (ch - start >= 1000) {
+			break;
+		}
+
+		if (current == '\\' || current == '"') {
+			*ch++ = '\\';
+			*ch++ = current;
+		}
+		else if (current == '\n') {
+			*ch++ = '\\';
+			*ch++ = 'n';
+		}
+		else if (current == '\r') {
+			*ch++ = '\\';
+			*ch++ = 'r';
+		}
+		else if (current == '\b') {
+			*ch++ = '\\';
+			*ch++ = 'b';
+		}
+		else if (current == '\t') {
+			*ch++ = '\\';
+			*ch++ = 't';
+		}
+		else if (current == '\f') {
+			*ch++ = '\\';
+			*ch++ = 'f';
+		}
+		else if (current < ' ' || current >= 128) {
+			*ch++ = '\\';
+			*ch++ = 'u';
+			*ch++ = '0';
+			*ch++ = '0';
+			if (current < 16) {
+				*ch++ = '0';
+				*ch++ = "0123456789ABCDEF"[(int)current];
+			}
+			else {
+				*ch++ = "0123456789ABCDEF"[((int)(current)) >> 4];
+				*ch++ = "0123456789ABCDEF"[((int)(current)) & 15];
+			}
+		}
+		else {
+			*ch++ = current;
+		}
+		++input;
+	}
+	*ch = '\0';
+	return start;
+}
+
+char* xml_string(const char* original)
+{
+	static char string[MAX_STRINGS][1024];
+	static int  index = 0;
+	int length = strlen(original);
+	int newlength = 0;
+	int i = 0;
+
+	index %= MAX_STRINGS;
+
+	memset(string[index], 0, sizeof(string[0]));
+
+	for (i = 0; i < length; ++i) {
+		unsigned char ch = (unsigned char)original[i];
+
+		if (ch == '<') {
+			if (newlength < sizeof(string[0]) - 4) {
+				string[index][newlength++] = '&';
+				string[index][newlength++] = 'l';
+				string[index][newlength++] = 't';
+				string[index][newlength++] = ';';
+			}
+		}
+		else if (ch == '>') {
+			if (newlength < sizeof(string[0]) - 4) {
+				string[index][newlength++] = '&';
+				string[index][newlength++] = 'g';
+				string[index][newlength++] = 't';
+				string[index][newlength++] = ';';
+			}
+		}
+		else if (ch == '"') {
+			if (newlength < sizeof(string[0]) - 5) {
+				string[index][newlength++] = '&';
+				string[index][newlength++] = '#';
+				string[index][newlength++] = '3';
+				string[index][newlength++] = '4';
+				string[index][newlength++] = ';';
+			}
+		}
+		else if (ch == '&') {
+			if (newlength < sizeof(string[0]) - 5) {
+				string[index][newlength++] = '&';
+				string[index][newlength++] = 'a';
+				string[index][newlength++] = 'm';
+				string[index][newlength++] = 'p';
+				string[index][newlength++] = ';';
+			}
+		}
+		else if (ch == '\'') {
+			if (newlength < sizeof(string[0]) - 5) {
+				string[index][newlength++] = '&';
+				string[index][newlength++] = '#';
+				string[index][newlength++] = '3';
+				string[index][newlength++] = '9';
+				string[index][newlength++] = ';';
+			}
+		}
+		else {
+			string[index][newlength++] = ch;
+		}
+	}
+
+	return string[index++];
+}
+
+char *LogVarValueAsString(mvd_info_t *mvd, const char *varname, int player_num, encoding_mode_t encoding)
 {
 	logvar_t *logvar = LogVarHashTable_GetValue(logvar_hashtable, varname);
 
@@ -1415,7 +1565,19 @@ char *LogVarValueAsString(mvd_info_t *mvd, const char *varname, int player_num)
 		return "";
 	}
 
-	return logvar->func(mvd, logvar->name, player_num);
+	if (encoding == xml_encoding) {
+		const char* source = logvar->func(mvd, logvar->name, player_num);
+
+		return xml_string(source);
+	}
+	else if (encoding == json_encoding) {
+		const char* source = logvar->func(mvd, logvar->name, player_num);
+
+		return json_string(source);
+	}
+	else {
+		return logvar->func(mvd, logvar->name, player_num);
+	}
 }
 
 void LogVarHashTable_Init(void)
