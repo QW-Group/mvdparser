@@ -203,6 +203,12 @@ static void InitFragDefs(void)
 		goto nextline;																			\
 	}
 
+#define FRAGS_CHECKARGS3(x, y, z)																		\
+	if (c != x && c != y && c != z) {																	\
+		Sys_PrintError("Fragfile warning (line %d): %d, %d or %d tokens expected\n", line, x, y, z);	\
+		goto nextline;																					\
+	}
+
 #define	FRAGS_CHECK_VERSION_DEFINED()																	\
 	if (!gotversion) {																					\
 		Sys_PrintError("Fragfile error: #FRAGFILE VERSION must be defined at the head of the file\n");	\
@@ -345,7 +351,7 @@ qbool LoadFragFile(char *filename, qbool quiet)
 
 			if (!strcasecmp(Cmd_Argv(1), "WEAPON_CLASS") || !strcasecmp(Cmd_Argv(1), "WC")) 
 			{
-				FRAGS_CHECKARGS2(4, 5);
+				FRAGS_CHECKARGS3(4, 5, 6);
 				token = Cmd_Argv(2);
 			
 				if (!strcasecmp(token, "NOWEAPON") || !strcasecmp(token, "NONE") || !strcasecmp(token, "NULL")) 
