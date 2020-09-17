@@ -659,6 +659,9 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 	strlcpy(str, MSG_ReadString(), sizeof(str)); 
 
 	// TODO : Check for frag messages spread over several svc_prints older mods/servers does this crap :(
+	if (str[strlen(str) - 1] == '\n') {
+		str[strlen(str) - 1] = '\0';
+	}
 
 	Sys_PrintDebug(5, "svc_print: (%s) RAW: %s\n", print_strings[level], str);
 	Sys_PrintDebug(1, "svc_print: (%s) %s\n", print_strings[level], Sys_RedToWhite(str));
