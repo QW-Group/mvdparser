@@ -711,6 +711,7 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 		else if (!strncmp(str, "The match is over", 17))
 		{
 			int i;
+			qbool any = false;
 
 			mvd->serverinfo.match_ended = true;
 			Log_Event(&logger, mvd, LOG_MATCHEND, -1);
@@ -723,8 +724,13 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 					continue;
 				}
 
+				if (any)
+					Log_Event(&logger, mvd, LOG_MATCHEND_ALL_BETWEEN, i);
 				Log_Event(&logger, mvd, LOG_MATCHEND_ALL, i);
+				any = true;
 			}
+
+			Log_Event(&logger, mvd, LOG_MATCHEND_FINAL, -1);
 		}
 		else if (strstr(str, "overtime follows"))
 		{

@@ -102,6 +102,14 @@ static log_eventlogger_type_t Log_ParseEventloggerType(const char *event_logger_
 	{
 		return LOG_MATCHEND_ALL;
 	}
+	else if (!strcasecmp(event_logger_type, "MATCHEND_ALL_BETWEEN"))
+	{
+		return LOG_MATCHEND_ALL_BETWEEN;
+	}
+	else if (!strcasecmp(event_logger_type, "MATCHEND_FINAL"))
+	{
+		return LOG_MATCHEND_FINAL;
+	}
 	else if (!strcasecmp(event_logger_type, "DEMOSTART"))
 	{
 		return LOG_DEMOSTART;

@@ -485,6 +485,7 @@ qbool MVD_Parser_StartParse(char *demopath, byte *mvdbuf, long filelen)
 	if (!mvd.serverinfo.match_ended)
 	{
 		int i;
+		qbool any = false;
 
 		Log_Event(&logger, &mvd, LOG_MATCHEND, -1);
 
@@ -496,8 +497,13 @@ qbool MVD_Parser_StartParse(char *demopath, byte *mvdbuf, long filelen)
 				continue;
 			}
 
+			if (any)
+				Log_Event(&logger, &mvd, LOG_MATCHEND_ALL_BETWEEN, i);
 			Log_Event(&logger, &mvd, LOG_MATCHEND_ALL, i);
+			any = true;
 		}
+
+		Log_Event(&logger, &mvd, LOG_MATCHEND_FINAL, -1);
 	}
 
 	Log_Event(&logger, &mvd, LOG_DEMOEND, -1);

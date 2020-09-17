@@ -29,7 +29,9 @@ typedef enum log_eventlogger_type_s
 	LOG_DEMOEND,
 	LOG_SPAWN,
 	LOG_ITEMPICKUP,
-	LOG_WEAPONDROP
+	LOG_WEAPONDROP,
+	LOG_MATCHEND_FINAL,
+	LOG_MATCHEND_ALL_BETWEEN
 } log_eventlogger_type_t;
 
 typedef struct log_outputfile_template_s
