@@ -546,6 +546,10 @@ typedef struct mvd_info_s
 
 	log_event_t		*log_events_tail;
 	log_event_t		*log_events_head;
+
+	unsigned int    extension_flags_fte1;
+	unsigned int    extension_flags_fte2;
+	unsigned int    extension_flags_mvd;
 } mvd_info_t;
 
 // usercmd button bits
@@ -583,5 +587,12 @@ typedef struct temp_entity_list_s
 } temp_entity_list_t;
 
 temp_entity_list_t	temp_entities;
+
+// Protocol extensions
+#define PROTOCOL_VERSION_FTE    (('F'<<0) + ('T'<<8) + ('E'<<16) + ('X' << 24)) //fte extensions.
+#define PROTOCOL_VERSION_FTE2   (('F'<<0) + ('T'<<8) + ('E'<<16) + ('2' << 24))	//fte extensions.
+#define PROTOCOL_VERSION_MVD1   (('M'<<0) + ('V'<<8) + ('D'<<16) + ('1' << 24)) //mvdsv extensions.
+
+#define FTE_PEXT_FLOATCOORDS  0x00008000
 
 #endif // __QW_PROTOCOL_H__

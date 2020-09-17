@@ -818,7 +818,26 @@ static void NetMsg_Parser_Parse_svc_setangle(void)
 
 static void NetMsg_Parser_Parse_svc_serverdata(mvd_info_t *mvd)
 {
-	mvd->serverinfo.protocol_version	= MSG_ReadLong();
+	int protocol;
+
+	while (true) {
+		protocol = MSG_ReadLong();
+		if (protocol == PROTOCOL_VERSION_FTE) {
+			mvd->extension_flags_fte1 = MSG_ReadLong();
+			MSG_SetBigCoordSupport(mvd->extension_flags_fte1 & FTE_PEXT_FLOATCOORDS);
+		}
+		else if (protocol == PROTOCOL_VERSION_FTE2) {
+			mvd->extension_flags_fte2 = MSG_ReadLong();
+		}
+		else if (protocol == PROTOCOL_VERSION_MVD1) {
+			mvd->extension_flags_mvd = MSG_ReadLong();
+		}
+		else {
+			break;
+		}
+	}
+
+	mvd->serverinfo.protocol_version	= protocol;
 	mvd->serverinfo.servercount			= MSG_ReadLong();
 
 	// Gamedir.

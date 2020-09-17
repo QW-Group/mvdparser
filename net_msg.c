@@ -4,6 +4,8 @@
 #include "qw_protocol.h"
 #include "net_msg.h"
 
+static qbool use_bigcoords = false;
+
 sizebuf_t net_message;
 int msg_readcount;
 qbool msg_badread;
@@ -162,11 +164,17 @@ char *MSG_ReadStringLine(void)
 
 float MSG_ReadCoord (void)
 {
+	if (use_bigcoords) {
+		return MSG_ReadFloat();
+	}
 	return MSG_ReadShort() * (1.0f / 8);
 }
 
 float MSG_ReadAngle (void)
 {
+	if (use_bigcoords) {
+		return MSG_ReadAngle16();
+	}
 	return MSG_ReadChar() * (360.0f / 256);
 }
 
@@ -236,4 +244,9 @@ void MSG_ReadDeltaUsercmd(usercmd_t *from, usercmd_t *move, int protoversion)
 	{
 		move->msec = MSG_ReadByte (); // always sent
 	}
+}
+
+void MSG_SetBigCoordSupport(qbool enabled)
+{
+	use_bigcoords = enabled;
 }
