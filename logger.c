@@ -482,6 +482,10 @@ char *Log_ExpandTemplateString(logger_t *logger, mvd_info_t *mvd, const char *te
 				}
 
 				input = var_end;
+
+				if (!input[0]) {
+					break;
+				}
 			}
 		}
 
@@ -554,7 +558,6 @@ void Log_Event(logger_t *logger, mvd_info_t *mvd, log_eventlogger_type_t type, i
 	int i;
 	int j;
 	int p;
-	int e;
 	int player_start				= player_num;
 	int player_count				= 1;
 	int output_len[encoding_count]	= { 0, 0, 0 };
