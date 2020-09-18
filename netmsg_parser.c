@@ -791,7 +791,7 @@ static void NetMsg_Parser_ParseServerInfo(mvd_info_t *mvd)
 		snprintf(mvd->serverinfo.mod, sizeof(mvd->serverinfo.mod), "KTX %s build %s", tmp, Info_ValueForKey(mvd->serverinfo.serverinfo, "xbuild"));
 	}
 
-	strlcpy(mvd->serverinfo.mapname, Info_ValueForKey(mvd->serverinfo.serverinfo, "map"), sizeof(mvd->serverinfo.mapname));
+	strlcpy(mvd->serverinfo.mapfile, Info_ValueForKey(mvd->serverinfo.serverinfo, "map"), sizeof(mvd->serverinfo.mapfile));
 	strlcpy(mvd->serverinfo.serverversion, Info_ValueForKey(mvd->serverinfo.serverinfo, "*version"), sizeof(mvd->serverinfo.serverversion));
 	strlcpy(mvd->serverinfo.status, Info_ValueForKey(mvd->serverinfo.serverinfo, "status"), sizeof(mvd->serverinfo.status));
 }

@@ -1197,6 +1197,12 @@ static char *LogVar_teamplay(mvd_info_t *mvd, const char *varname, int player_nu
 
 static char *LogVar_map(mvd_info_t *mvd, const char *varname, int player_num)
 {
+	// to keep old templates correct: used to return mapname from svc_serverdata and then overwrite with file from serverinfo
+	return mvd->serverinfo.mapfile;
+}
+
+static char* LogVar_mapname(mvd_info_t* mvd, const char* varname, int player_num)
+{
 	return mvd->serverinfo.mapname;
 }
 
@@ -1289,6 +1295,7 @@ logvar_t logvar_list[] =
 	LOGVAR_DEFINE(matchtime, LOGVAR_DEMO),
 	LOGVAR_DEFINE(mvdframe, LOGVAR_DEMO),
 	LOGVAR_DEFINE(map, LOGVAR_DEMO),
+	LOGVAR_DEFINE(mapname, LOGVAR_DEMO),
 	LOGVAR_DEFINE(gamedir, LOGVAR_DEMO),
 	LOGVAR_DEFINE(maxfps, LOGVAR_DEMO),
 	LOGVAR_DEFINE(zext, LOGVAR_DEMO),

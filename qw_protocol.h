@@ -462,34 +462,35 @@ typedef struct movevars_s
 
 typedef struct server_s
 {
-	char		serverinfo[2 * MAX_SERVERINFO_STRING]; // Make it larger than allowed.
-	int			protocol_version;
-	int			servercount;
-	float		demotime;
-	int			timelimit;
-	int			fraglimit;
-	int			teamplay;
-	int			deathmatch;
-	qbool		watervis;
-	char		serverversion[MAX_INFO_KEY];
-	int			maxclients;
-	int			maxspectators;
-	char		mapname[MAX_INFO_KEY];
-	int			fpd;
-	char		status[MAX_INFO_KEY];
-	char		gamedir[MAX_QPATH];
-	movevars_t	movevars;
-	qbool		countdown;
-	qbool		match_started;
-	qbool		match_ended;
-	qbool		match_overtime;
-	int			overtime_minutes;
-	int			maxfps;
-	int			zext;
-	char		hostname[MAX_INFO_STRING];
-	char		mod[MAX_INFO_STRING];
-	qbool		player_timed_out;
-	int			player_timout_frame;
+	char        serverinfo[2 * MAX_SERVERINFO_STRING]; // Make it larger than allowed.
+	int         protocol_version;
+	int         servercount;
+	float       demotime;
+	int         timelimit;
+	int         fraglimit;
+	int         teamplay;
+	int         deathmatch;
+	qbool       watervis;
+	char        serverversion[MAX_INFO_KEY];
+	int         maxclients;
+	int         maxspectators;
+	char        mapname[MAX_INFO_KEY];                 // now the friendly name (Blood Run)
+	char        mapfile[MAX_INFO_KEY];                 // now the name of the file (ztndm3)
+	int         fpd;
+	char        status[MAX_INFO_KEY];
+	char        gamedir[MAX_QPATH];
+	movevars_t  movevars;
+	qbool       countdown;
+	qbool       match_started;
+	qbool       match_ended;
+	qbool       match_overtime;
+	int         overtime_minutes;
+	int         maxfps;
+	int         zext;
+	char        hostname[MAX_INFO_STRING];
+	char        mod[MAX_INFO_STRING];
+	qbool       player_timed_out;
+	int         player_timout_frame;
 } server_t;
 
 typedef enum log_eventtype_s
