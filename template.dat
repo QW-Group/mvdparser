@@ -133,8 +133,8 @@ demotime=%demotime%;matchtime=%matchtime%;quake_loc_x=%posx%;quake_loc_y=%posy%;
 #EVENT MATCHEND	6
 {
     "hostname": "%hostname%",
-    "map_name": "%map%",
-    "map_file": "??",
+    "map_name": "%mapname%",
+    "map_file": "maps/%map%.bsp",
     "gamedir": "%gamedir%",
     "serverinfo": "%serverinfo%",
     "fraglimit": "%fraglimit%",
