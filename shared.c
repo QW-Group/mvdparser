@@ -289,7 +289,8 @@ qbool COM_ReadFile(const char *filename, byte **data, long *filelen)
 			return false;
 		}
 
-		(*data) = Q_malloc(sizeof(byte) * len);
+		(*data) = Q_malloc(sizeof(byte) * (len + 1));
+		(*data)[len] = '\0';
 
 		num_read = fread((*data), 1, len, f);
 
