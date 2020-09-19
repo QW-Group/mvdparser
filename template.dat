@@ -128,3 +128,89 @@ demotime=%demotime%;matchtime=%matchtime%;quake_loc_x=%posx%;quake_loc_y=%posy%;
 
 ////////////////////////////////////////////////////////////
 
+#FILE json %demoname%.json
+
+#EVENT MATCHEND	6
+{
+    "hostname": "%hostname%",
+    "map_name": "%mapname%",
+    "map_file": "maps/%map%.bsp",
+    "gamedir": "%gamedir%",
+    "serverinfo": "%serverinfo%",
+    "fraglimit": "%fraglimit%",
+    "timelimit": "%timelimit%",
+    "deathmatch": "%deathmatchmode%",
+    "maxfps": "%maxfps%",
+    "teamplay": "%teamplay%",
+    "z_ext": "%zext%",
+    "fpd": "%fpd%",
+    "maxclients": "%maxclients%",
+    "maxspectators": "%maxspectators%",
+    "watervis": "%watervis%",
+    "gametype": "unknown",
+    "version": "%serverversion%",
+    "mod": "%mod%",
+    "players": [
+#EVENT_END
+
+#EVENT MATCHEND_ALL 7
+            {
+                "client": "%client%",
+                "name_sanatized": "%name%",
+                "name_raw": "%nameraw%",
+                "player_num": "%playernum%",
+                "player_id": "%playerid%",
+                "frags": "%frags%",
+                "spectator": "%spectator%",
+                "userinfo": "%userinfo%",
+                "top_color": "%topcolor%",
+                "bottom_color": "%bottomcolor%",
+                "team_sanatized": "%team%",
+                "team_raw": "%teamraw%",
+                "avg_packetloss": "%avgpl%",
+                "max_packetloss": "%maxpl%",
+                "min_packetloss": "%minpl%",
+                "avg_ping": "%avgping%",
+                "max_ping": "%maxping%",
+                "min_ping": "%minping%",
+                "sg_shots": "%sgshots%",
+                "avg_speed": "%avgspeed%",
+                "max_speed": "%maxspeed%",
+                "distance_moved": "%distancemoved%",
+                "stats": {
+                    "Axe":{"Damage":0,"Drop":0,"Pickup":0},
+                    "Deaths": "%deaths%",
+                    "GreenArmor":{"Damage_Absorbed":0,"Pickup":%gacount%},
+                    "GrenadeLauncher":{"Damage":0,"Drop":%gldrop%,"Pickup":%glcount%,"Shots":%glshots%},
+                    "Kills":27,
+                    "LightningGun":{"Damage":0,"Drop":%lgdrop%,"Pickup":%lgcount%,"Shots":%lgshots%},
+                    "MegaHealth":{"Drop":0,"Pickup":%mhcount%},
+                    "NailGun":{"Damage":0,"Drop":%ngdrop%,"Pickup":%ngcount%,"Shots":%ngshots%},
+                    "Pentagram":{"Drop":0,"Pickup":%pentcount%},
+                    "Quad":{"Drop":0,"Pickup":%quadcount%},
+                    "RedArmor":{"Damage_Absorbed":0,"Pickup":%racount%},
+                    "Ring":{"Drop":0,"Pickup":%ringcount%},
+                    "RocketLauncher":{"Damage":0,"Drop":%rldrop%,"Pickup":%rlcount%,"Shots":%rlshots%},
+                    "Shotgun":{"Damage":0,"Drop":0,"Pickup":0},
+                    "Suicides":%suicides%,
+                    "SuperNailGun":{"Damage":0,"Drop":%sngdrop%,"Pickup":%sngcount%,"Shots":%sngshots%},
+                    "SuperShotgun":{"Damage":0,"Drop":%ssgdrop%,"Pickup":%ssgcount%,"Shots":%ssgshots%},
+                    "Teamkills":%teamkills%,
+                    "YellowArmor":{"Damage_Absorbed":0,"Pickup":%yacount%}
+                }
+            }
+#EVENT_END
+
+#EVENT MATCHEND_ALL_BETWEEN 8
+    ,
+#EVENT_END
+
+#EVENT MATCHEND_FINAL 9
+    ]
+}
+#EVENT_END
+
+#OUTPUT 6 json
+#OUTPUT 7 json
+#OUTPUT 8 json
+#OUTPUT 9 json

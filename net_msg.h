@@ -26,5 +26,6 @@ float MSG_ReadAngle16 (void);
 #define CM_MSEC	(1 << 7) // same as CM_ANGLE2
 
 void MSG_ReadDeltaUsercmd(usercmd_t *from, usercmd_t *move, int protoversion);
+void MSG_SetBigCoordSupport(qbool enabled);
 
 #endif // __NET_MSG_H__

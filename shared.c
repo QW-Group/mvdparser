@@ -186,7 +186,8 @@ size_t strlcat(char *dst, const char *src, size_t siz)
 	return(dlen + (s - src));       /* count does not include NUL */
 }
 
-#ifdef _MSC_VER
+// Implemented in later versions of Visual Studio (https://stackoverflow.com/questions/2915672/snprintf-and-visual-studio-2010)
+#if defined(_MSC_VER) && _MSC_VER < 1900
 int snprintf(char *buffer, size_t count, char const *format, ...)
 {
 	int ret;
@@ -288,7 +289,8 @@ qbool COM_ReadFile(const char *filename, byte **data, long *filelen)
 			return false;
 		}
 
-		(*data) = Q_malloc(sizeof(byte) * len);
+		(*data) = Q_malloc(sizeof(byte) * (len + 1));
+		(*data)[len] = '\0';
 
 		num_read = fread((*data), 1, len, f);
 

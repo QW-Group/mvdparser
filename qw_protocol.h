@@ -462,34 +462,35 @@ typedef struct movevars_s
 
 typedef struct server_s
 {
-	char		serverinfo[2 * MAX_SERVERINFO_STRING]; // Make it larger than allowed.
-	int			protocol_version;
-	int			servercount;
-	float		demotime;
-	int			timelimit;
-	int			fraglimit;
-	int			teamplay;
-	int			deathmatch;
-	qbool		watervis;
-	char		serverversion[MAX_INFO_KEY];
-	int			maxclients;
-	int			maxspectators;
-	char		mapname[MAX_INFO_KEY];
-	int			fpd;
-	char		status[MAX_INFO_KEY];
-	char		gamedir[MAX_QPATH];
-	movevars_t	movevars;
-	qbool		countdown;
-	qbool		match_started;
-	qbool		match_ended;
-	qbool		match_overtime;
-	int			overtime_minutes;
-	int			maxfps;
-	int			zext;
-	char		hostname[MAX_INFO_STRING];
-	char		mod[MAX_INFO_STRING];
-	qbool		player_timed_out;
-	int			player_timout_frame;
+	char        serverinfo[2 * MAX_SERVERINFO_STRING]; // Make it larger than allowed.
+	int         protocol_version;
+	int         servercount;
+	float       demotime;
+	int         timelimit;
+	int         fraglimit;
+	int         teamplay;
+	int         deathmatch;
+	qbool       watervis;
+	char        serverversion[MAX_INFO_KEY];
+	int         maxclients;
+	int         maxspectators;
+	char        mapname[MAX_INFO_KEY];                 // now the friendly name (Blood Run)
+	char        mapfile[MAX_INFO_KEY];                 // now the name of the file (ztndm3)
+	int         fpd;
+	char        status[MAX_INFO_KEY];
+	char        gamedir[MAX_QPATH];
+	movevars_t  movevars;
+	qbool       countdown;
+	qbool       match_started;
+	qbool       match_ended;
+	qbool       match_overtime;
+	int         overtime_minutes;
+	int         maxfps;
+	int         zext;
+	char        hostname[MAX_INFO_STRING];
+	char        mod[MAX_INFO_STRING];
+	qbool       player_timed_out;
+	int         player_timout_frame;
 } server_t;
 
 typedef enum log_eventtype_s
@@ -546,6 +547,10 @@ typedef struct mvd_info_s
 
 	log_event_t		*log_events_tail;
 	log_event_t		*log_events_head;
+
+	unsigned int    extension_flags_fte1;
+	unsigned int    extension_flags_fte2;
+	unsigned int    extension_flags_mvd;
 } mvd_info_t;
 
 // usercmd button bits
@@ -583,5 +588,12 @@ typedef struct temp_entity_list_s
 } temp_entity_list_t;
 
 temp_entity_list_t	temp_entities;
+
+// Protocol extensions
+#define PROTOCOL_VERSION_FTE    (('F'<<0) + ('T'<<8) + ('E'<<16) + ('X' << 24)) //fte extensions.
+#define PROTOCOL_VERSION_FTE2   (('F'<<0) + ('T'<<8) + ('E'<<16) + ('2' << 24))	//fte extensions.
+#define PROTOCOL_VERSION_MVD1   (('M'<<0) + ('V'<<8) + ('D'<<16) + ('1' << 24)) //mvdsv extensions.
+
+#define FTE_PEXT_FLOATCOORDS  0x00008000
 
 #endif // __QW_PROTOCOL_H__

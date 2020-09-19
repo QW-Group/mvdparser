@@ -7,11 +7,20 @@
 #define LOG_OUTPUTFILES_HASHTABLE_SIZE	512
 #define LOG_MAX_ID_LENGTH				32
 
+typedef enum encoding_mode_s {
+	normal_encoding,
+	json_encoding,
+	xml_encoding,
+
+	encoding_count
+} encoding_mode_t;
+
 typedef struct log_outputfile_s
 {
 	char					*filename;		// Expanded filename.
 	FILE					*file;			// The file pointer to the opened file.
 	unsigned long			filename_hash;	// A hash of the expanded filename.
+	encoding_mode_t         encoding;       // format to encode strings
 	struct log_outputfile_s	*next;			// Pointer to the next outputfile (if there's a collision in the hash table).
 } log_outputfile_t; 
 
@@ -29,7 +38,9 @@ typedef enum log_eventlogger_type_s
 	LOG_DEMOEND,
 	LOG_SPAWN,
 	LOG_ITEMPICKUP,
-	LOG_WEAPONDROP
+	LOG_WEAPONDROP,
+	LOG_MATCHEND_FINAL,
+	LOG_MATCHEND_ALL_BETWEEN
 } log_eventlogger_type_t;
 
 typedef struct log_outputfile_template_s

@@ -659,6 +659,9 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 	strlcpy(str, MSG_ReadString(), sizeof(str)); 
 
 	// TODO : Check for frag messages spread over several svc_prints older mods/servers does this crap :(
+	if (str[strlen(str) - 1] == '\n') {
+		str[strlen(str) - 1] = '\0';
+	}
 
 	Sys_PrintDebug(5, "svc_print: (%s) RAW: %s\n", print_strings[level], str);
 	Sys_PrintDebug(1, "svc_print: (%s) %s\n", print_strings[level], Sys_RedToWhite(str));
@@ -711,6 +714,7 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 		else if (!strncmp(str, "The match is over", 17))
 		{
 			int i;
+			qbool any = false;
 
 			mvd->serverinfo.match_ended = true;
 			Log_Event(&logger, mvd, LOG_MATCHEND, -1);
@@ -723,8 +727,13 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 					continue;
 				}
 
+				if (any)
+					Log_Event(&logger, mvd, LOG_MATCHEND_ALL_BETWEEN, i);
 				Log_Event(&logger, mvd, LOG_MATCHEND_ALL, i);
+				any = true;
 			}
+
+			Log_Event(&logger, mvd, LOG_MATCHEND_FINAL, -1);
 		}
 		else if (strstr(str, "overtime follows"))
 		{
@@ -782,7 +791,7 @@ static void NetMsg_Parser_ParseServerInfo(mvd_info_t *mvd)
 		snprintf(mvd->serverinfo.mod, sizeof(mvd->serverinfo.mod), "KTX %s build %s", tmp, Info_ValueForKey(mvd->serverinfo.serverinfo, "xbuild"));
 	}
 
-	strlcpy(mvd->serverinfo.mapname, Info_ValueForKey(mvd->serverinfo.serverinfo, "map"), sizeof(mvd->serverinfo.mapname));
+	strlcpy(mvd->serverinfo.mapfile, Info_ValueForKey(mvd->serverinfo.serverinfo, "map"), sizeof(mvd->serverinfo.mapfile));
 	strlcpy(mvd->serverinfo.serverversion, Info_ValueForKey(mvd->serverinfo.serverinfo, "*version"), sizeof(mvd->serverinfo.serverversion));
 	strlcpy(mvd->serverinfo.status, Info_ValueForKey(mvd->serverinfo.serverinfo, "status"), sizeof(mvd->serverinfo.status));
 }
@@ -818,7 +827,26 @@ static void NetMsg_Parser_Parse_svc_setangle(void)
 
 static void NetMsg_Parser_Parse_svc_serverdata(mvd_info_t *mvd)
 {
-	mvd->serverinfo.protocol_version	= MSG_ReadLong();
+	int protocol;
+
+	while (true) {
+		protocol = MSG_ReadLong();
+		if (protocol == PROTOCOL_VERSION_FTE) {
+			mvd->extension_flags_fte1 = MSG_ReadLong();
+			MSG_SetBigCoordSupport(mvd->extension_flags_fte1 & FTE_PEXT_FLOATCOORDS);
+		}
+		else if (protocol == PROTOCOL_VERSION_FTE2) {
+			mvd->extension_flags_fte2 = MSG_ReadLong();
+		}
+		else if (protocol == PROTOCOL_VERSION_MVD1) {
+			mvd->extension_flags_mvd = MSG_ReadLong();
+		}
+		else {
+			break;
+		}
+	}
+
+	mvd->serverinfo.protocol_version	= protocol;
 	mvd->serverinfo.servercount			= MSG_ReadLong();
 
 	// Gamedir.
