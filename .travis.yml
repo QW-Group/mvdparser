@@ -72,7 +72,7 @@ before_install:
   - if [ -z "${ARCH##armhf}" ]; then sudo apt-get -y install gcc-arm-linux-gnueabihf pkg-config-arm-linux-gnueabihf libc6-dev-armhf-cross ;fi
   - if [ -z "${ARCH##aarch64}" ]; then sudo apt-get -y install gcc-aarch64-linux-gnu ; sudo mkdir -p /usr/include/aarch64-linux-gnu ; sudo ln -s /usr/aarch64-linux-gnu/include/asm /usr/include/aarch64-linux-gnu/asm ;fi
   # Debug step
-More per  - sudo find / -name 'ioctls.h'
+  - sudo find / -name 'ioctls.h'
   # activate virtualenv with python3, meson requires python3
   - virtualenv .venv --python=python3
   - . .venv/bin/activate
