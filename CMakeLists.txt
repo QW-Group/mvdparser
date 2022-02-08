@@ -66,7 +66,7 @@ if(UNIX)
 	target_link_libraries(${PROJECT_NAME} m)
 else()
 	target_link_libraries(${PROJECT_NAME} winmm)
-	set(CFLAGS -mno-cygwin -L/lib/w32api -Wl --allow-multiple-definition --enable-auto-import)
+	set(CFLAGS --enable-auto-import)
 	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc")
 endif()
 
