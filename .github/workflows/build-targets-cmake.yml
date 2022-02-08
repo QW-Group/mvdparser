@@ -24,6 +24,6 @@ jobs:
         with:
           name: ${{ matrix.target }}
           path: |
-                build/${{ matrix.target }}/mvdsv
-                build/${{ matrix.target }}/mvdsv.exe
+                build/${{ matrix.target }}/mvdparser
+                build/${{ matrix.target }}/mvdparser.exe
           if-no-files-found: ignore
