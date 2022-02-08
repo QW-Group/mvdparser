@@ -66,7 +66,6 @@ if(UNIX)
 	target_link_libraries(${PROJECT_NAME} m)
 else()
 	target_link_libraries(${PROJECT_NAME} winmm)
-	set(CFLAGS --enable-auto-import)
 	set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc")
 endif()
 
