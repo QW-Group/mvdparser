@@ -8,14 +8,14 @@ endif
 
 CC_LIN = gcc
 CC_WIN = gcc
-CCFLAGS = -lm 
-INCLUDEDIRS=
+CCFLAGS = -lm
+INCLUDEDIRS =
 
 ifeq "$(OS)" "linux"
-	SOURCES = frag_parser.c logger.c main.c mvd_parser.c net_msg.c netmsg_parser.c qw_protocol.c shared.c sys_linux.c 
+	SOURCES = src/frag_parser.c src/logger.c src/main.c src/mvd_parser.c src/net_msg.c src/netmsg_parser.c src/qw_protocol.c src/shared.c src/sys_linux.c
 	CC=$(CC_LIN)
 else	## windows
-	SOURCES = frag_parser.c logger.c main.c mvd_parser.c net_msg.c netmsg_parser.c qw_protocol.c shared.c strptime.c sys_win.c  
+	SOURCES = src/frag_parser.c src/logger.c src/main.c src/mvd_parser.c src/net_msg.c src/netmsg_parser.c src/qw_protocol.c src/shared.c src/strptime.c src/sys_win.c
 	CC=$(CC_WIN) -mno-cygwin -L/lib/w32api
 	CCFLAGS+=-Wl,--allow-multiple-definition -Wl,--enable-auto-import
 	EXTRA_LIBS=-lwinmm
@@ -30,7 +30,5 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(INCLUDEDIRS) $(SOURCES) -o $(EXECUTABLE) $(CCFLAGS) $(EXTRA_LIBS)
 
 clean: 
-	rm -f *.o
+	rm -f src/*.o
 	rm -f $(EXECUTABLE)
-
-

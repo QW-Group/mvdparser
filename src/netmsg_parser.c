@@ -8,9 +8,7 @@
 #include "frag_parser.h"
 #include "logger.h"
 
-#ifdef WIN32
 #include "strptime.h"
-#endif // WIN32
 
 // ========================================================================================
 // HELPER FUNCTITONS
