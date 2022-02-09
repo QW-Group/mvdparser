@@ -26,6 +26,9 @@
 #include <errno.h>
 #include <dirent.h>
 
+#include "maindef.h"
+
+
 /* needed for RTC timer */
 #define RTC_RATE 1024.00
 static int rtc_fd;  /* file descriptor for rtc device */
