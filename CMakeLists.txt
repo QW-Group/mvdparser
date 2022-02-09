@@ -21,6 +21,7 @@ set(SRC_COMMON
 	"${DIR_SRC}/netmsg_parser.c"
 	"${DIR_SRC}/qw_protocol.c"
 	"${DIR_SRC}/shared.c"
+	"${DIR_SRC}/strptime.c"
 	)
 
 # Check build target, and included sources
@@ -30,7 +31,6 @@ if(UNIX)
 	)
 else()
 	list(APPEND SRC_COMMON
-		"${DIR_SRC}/strptime.c"
 		"${DIR_SRC}/sys_win.c"
 	)
 endif()
@@ -39,7 +39,7 @@ endif()
 ######################################################################################################
 
 # Set base compiler flags
-set(CFLAGS)
+set(CFLAGS -Wall)
 set(LFLAGS)
 
 
