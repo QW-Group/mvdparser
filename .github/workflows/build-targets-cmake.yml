@@ -7,9 +7,31 @@ jobs:
       fail-fast: false
       matrix:
        target: [linux-amd64, linux-i686, linux-armhf, linux-aarch64, windows-x64, windows-x86]
-       os: [linux, linux, linux, linux, windows, windows]
-       arch: [amd64, i686, armhf, aarch64, x64, x86]
-       ext: ["","", "", "", .exe, .exe]
+       include:
+         - target: linux-amd64
+           os: linux
+           arch: amd64
+           ext: ""
+         - target: linux-i686
+           os: linux
+           arch: i686
+           ext: ""
+         - target: linux-armhf
+           os: linux
+           arch: armhf
+           ext: ""
+         - target: linux-aarch64
+           os: linux
+           arch: aarch64
+           ext: ""
+         - target: windows-x64
+           os: windows
+           arch: x64
+           ext: ".exe"
+         - target: windows-x86
+           os: windows
+           arch: x86
+           ext: ".exe"
     steps:
       - name: Checkout
         uses: actions/checkout@v2
