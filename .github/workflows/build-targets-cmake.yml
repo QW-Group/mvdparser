@@ -6,7 +6,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [linux-amd64, linux-i686, linux-armhf, linux-aarch64, windows-x64, windows-x86]
+       target: [linux-amd64, linux-i686, linux-armhf, linux-aarch64, windows-x64, windows-x86]
+       os: [linux, linux, linux, linux, windows, windows]
+       arch: [amd64, i686, armhf, aarch64, x64, x86]
+       ext: ["","", "", "", .exe, .exe]
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -24,6 +27,5 @@ jobs:
         with:
           name: ${{ matrix.target }}
           path: |
-                build/${{ matrix.target }}/mvdparser
-                build/${{ matrix.target }}/mvdparser.exe
+                build/${{ matrix.target }}/mvdparser${{ matrix.ext }}
           if-no-files-found: ignore
