@@ -44,6 +44,9 @@ jobs:
       - name: Build
         run: |
              ./build_cmake.sh ${{ matrix.target }}
+      - name: Create checksum
+        run: |
+             md5sum build/${{ matrix.target }}/mvdparser${{ matrix.ext }} > build/${{ matrix.target }}/mvdparser.md5
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -51,3 +54,15 @@ jobs:
           path: |
                 build/${{ matrix.target }}/mvdparser${{ matrix.ext }}
           if-no-files-found: ignore
+      - name: Deploy
+        run: |
+             mkdir -p upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}
+             mkdir -p upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}
+             echo "DATE=output-$(date "+%Y.%m.%d-%H.%M.%S")" >> $GITHUB_ENV
+             cp build/${{ matrix.target }}/mvdparser${{ matrix.ext }} upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.OUTPUT }}_${GITHUB_SHA::7}_mvdparser${{ matrix.ext }}
+             cp build/${{ matrix.target }}/mvdparser.md5 upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.OUTPUT }}_${GITHUB_SHA::7}_mvdparser.md5
+             cp build/${{ matrix.target }}/mvdparser${{ matrix.ext }} upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/${{ env.OUTPUT }}_${GITHUB_SHA::7}_mvdparser${{ matrix.ext }}
+             cp build/${{ matrix.target }}/mvdparser.md5 upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/${{ env.OUTPUT }}_${GITHUB_SHA::7}_mvdparser.md5
+             openssl aes-256-cbc -K $encrypted_2be706a63e31_key -iv $encrypted_2be706a63e31_iv -in mvdparser_builds.key.enc -out mvdparser_builds.key -d
+             chmod 600 mvdparser_builds.key
+             sftp -q -i mvdparser_builds.key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${SFTP_PORT} ${SFTP_USERNAME}@${SFTP_HOST}:/ <<< $'put -rp upload/*'
