@@ -1,5 +1,6 @@
 # MVDparser: a Quakeworld Multi-View Demos (MVD) Parser
 
+
 In QuakeWorld and the popular server MVDSV, it is possible to record server side demos that include the views of all players on the map.
 
 This program parses such demos and can output statistics about them in a customized format.
@@ -15,7 +16,7 @@ The following architectures are fully supported by **[MVDPARSER][mvdparser]** an
 * Windows x86 (Intel and AMD 32-bit processors)
 
 ## Prebuilt binaries
-You can find the prebuilt binaries on [this download page][mvdparser_builds].
+You can find the prebuilt binaries on [this download page][mvdparser-builds].
 
 ## Prerequisites
 
@@ -50,12 +51,6 @@ V=1 B=Debug ./build_cmake.sh linux-amd64
 should build MVDPARSER for linux-amd64 platform with debug, verbose (useful if you need validate compiler flags)
 
 ```
-V=1 B=Debug BOT_SUPPORT=OFF ./build_cmake.sh linux-amd64
-```
-
-same as above but compile without bot support
-
-```
 G="Unix Makefiles" ./build_cmake.sh linux-amd64
 ```
 
@@ -86,5 +81,5 @@ This project is licensed under the GPL-2.0 License - see the [LICENSE.md](LICENS
 
 [mvdparser]: https://github.com/QW-Group/mvdparser
 [mvdparser-tags]: https://github.com/QW-Group/mvdparser/tags
-[mvdparser_builds]: https://builds.quakeworld.nu/mvdparser
+[mvdparser-builds]: https://builds.quakeworld.nu/mvdparser
 [discord-qw]: http://discord.quake.world/
