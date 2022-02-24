@@ -67,5 +67,5 @@ jobs:
              #chmod 600 mvdparser_builds.key
              #sftp -q -i mvdparser_builds.key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${SFTP_PORT} ${SFTP_USERNAME}@${SFTP_HOST}:/ <<< $'put -rp upload/*'
              echo "${{ secrets.SSH_PRIVATE_KEY }}" >> private_key
-             sftp -q -i private_key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOSTS }}:/ <<< $'put -rp upload/*'
+             sftp -q -i private_key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/ <<< $'put -rp upload/*'
 
