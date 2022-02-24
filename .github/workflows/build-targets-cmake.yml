@@ -55,6 +55,11 @@ jobs:
                 build/${{ matrix.target }}/mvdparser${{ matrix.ext }}
           if-no-files-found: ignore
       - name: Deploy
+        env:
+            HOST: ${{ secrets.SFTP_HOST }}
+            USER: ${{ secrets.SFTP_USERNAME }}
+            PORT: ${{ secrets.SFTP_PORT }}
+            KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
              mkdir -p upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}
              mkdir -p upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}
@@ -63,7 +68,7 @@ jobs:
              cp build/${{ matrix.target }}/mvdparser.md5 upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_mvdparser.md5
              cp build/${{ matrix.target }}/mvdparser${{ matrix.ext }} upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_mvdparser${{ matrix.ext }}
              cp build/${{ matrix.target }}/mvdparser.md5 upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_mvdparser.md5
-             echo "${{ secrets.SSH_PRIVATE_KEY }}" >> private_key
+             echo $KEY >> private_key
              ls -la upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/
-             sftp -q -i private_key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/ <<< $'put -rp upload/*'
+             sftp -q -i private_key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P $PORT $USER@$HOST:/ <<< $'put -rp upload/*'
 
