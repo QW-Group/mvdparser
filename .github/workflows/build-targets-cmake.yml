@@ -58,14 +58,12 @@ jobs:
         run: |
              mkdir -p upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}
              mkdir -p upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}
-             echo "DATE=output-$(date "+%Y.%m.%d-%H.%M.%S")" >> $GITHUB_ENV
-             cp build/${{ matrix.target }}/mvdparser${{ matrix.ext }} upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.OUTPUT }}_${GITHUB_SHA::7}_mvdparser${{ matrix.ext }}
-             cp build/${{ matrix.target }}/mvdparser.md5 upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.OUTPUT }}_${GITHUB_SHA::7}_mvdparser.md5
-             cp build/${{ matrix.target }}/mvdparser${{ matrix.ext }} upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/${{ env.OUTPUT }}_${GITHUB_SHA::7}_mvdparser${{ matrix.ext }}
-             cp build/${{ matrix.target }}/mvdparser.md5 upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/${{ env.OUTPUT }}_${GITHUB_SHA::7}_mvdparser.md5
-             #openssl aes-256-cbc -K $encrypted_2be706a63e31_key -iv $encrypted_2be706a63e31_iv -in mvdparser_builds.key.enc -out mvdparser_builds.key -d
-             #chmod 600 mvdparser_builds.key
-             #sftp -q -i mvdparser_builds.key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${SFTP_PORT} ${SFTP_USERNAME}@${SFTP_HOST}:/ <<< $'put -rp upload/*'
+             echo "DATE=$(date "+%Y%m%d-%H%M%S")" >> $GITHUB_ENV
+             cp build/${{ matrix.target }}/mvdparser${{ matrix.ext }} upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_mvdparser${{ matrix.ext }}
+             cp build/${{ matrix.target }}/mvdparser.md5 upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_mvdparser.md5
+             cp build/${{ matrix.target }}/mvdparser${{ matrix.ext }} upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_mvdparser${{ matrix.ext }}
+             cp build/${{ matrix.target }}/mvdparser.md5 upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_mvdparser.md5
              echo "${{ secrets.SSH_PRIVATE_KEY }}" >> private_key
+             ls -la upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/
              sftp -q -i private_key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/ <<< $'put -rp upload/*'
 
