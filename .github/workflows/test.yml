@@ -1,0 +1,10 @@
+name: build all targets with cmake
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        run: |
+         touch test.txt
+         sftp -q -i private_key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P $PORT $USER@$HOST:/ <<< $'put -rp test.txt'
