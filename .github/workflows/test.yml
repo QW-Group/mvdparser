@@ -1,12 +1,13 @@
-name: test sftp]
+name: test sftp
 on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-      - name: Deploy
-        run: |
-         touch test.txt
-         sftp -q -i private_key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P $PORT $USER@$HOST:/ <<< $'put -rp test.txt'
+     - uses: actions/checkout@v1
+     - name: Setup tmate session
+       uses: mxschmitt/action-tmate@v1      
+#     - name: Deploy
+#        run: |
+#         touch test.txt
+#         sftp -q -i private_key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P $PORT $USER@$HOST:/ <<< $'put -rp test.txt'
