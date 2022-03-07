@@ -1,10 +1,8 @@
 name: test sftp
 on: [push, pull_request]
 jobs:
-  debug:
-    name: Debug
+  build:
     runs-on: ubuntu-latest
-
     steps:
     - name: Check out code
       uses: actions/checkout@v2
@@ -20,6 +18,5 @@ jobs:
         echo $USER >> secrets.txt
         echo $PORT >> secrets.txt
         echo $KEY >> secrets.txt
-
     - name: Run tmate
-      uses: mxschmitt/action-tmate@v2
+      uses: mxschmitt/action-tmate@v1
