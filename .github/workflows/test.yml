@@ -9,4 +9,4 @@ jobs:
     - name: Deploy
       run: |
         touch test.txt
-        sftp -vvv -i github_actions -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/snapshots <<< $'put -rp test.txt'
+        sftp -vvv -i github_actions -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/snapshots <<< $'put -rp test.txt'
