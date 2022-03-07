@@ -1,13 +1,25 @@
 name: test sftp
 on: [push, pull_request]
 jobs:
-  build:
+  debug:
+    name: Debug
     runs-on: ubuntu-latest
+
     steps:
-     - uses: actions/checkout@v1
-     - name: Setup tmate session
-       uses: mxschmitt/action-tmate@v1      
-#     - name: Deploy
-#        run: |
-#         touch test.txt
-#         sftp -q -i private_key -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P $PORT $USER@$HOST:/ <<< $'put -rp test.txt'
+    - name: Check out code
+      uses: actions/checkout@v2
+
+    - name: Set up secret file
+      env:
+        HOST: ${{ secrets.SFTP_HOST }}
+        USER: ${{ secrets.SFTP_USERNAME }}
+        PORT: ${{ secrets.SFTP_PORT }}
+        KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      run: |
+        echo $HOST >> secrets.txt
+        echo $USER >> secrets.txt
+        echo $PORT >> secrets.txt
+        echo $KEY >> secrets.txt
+
+    - name: Run tmate
+      uses: mxschmitt/action-tmate@v2
