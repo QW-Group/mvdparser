@@ -1,9 +1,11 @@
-name: build all targets with cmake
+name: test sftp]
 on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: Deploy
         run: |
          touch test.txt
