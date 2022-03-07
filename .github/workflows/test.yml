@@ -6,17 +6,13 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v2
-
-    - name: Set up secret file
+    - name: Deploy
       env:
         HOST: ${{ secrets.SFTP_HOST }}
         USER: ${{ secrets.SFTP_USERNAME }}
         PORT: ${{ secrets.SFTP_PORT }}
         KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       run: |
-        echo $HOST >> secrets.txt
-        echo $USER >> secrets.txt
-        echo $PORT >> secrets.txt
-        echo $KEY >> secrets.txt
-    - name: Run tmate
-      uses: mxschmitt/action-tmate@v1
+        touch test.txt
+        sftp -q -i $KEY -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P $PORT $USER@$HOST:/snapshots <<< $'put -rp test.txt'
+        sftp -q -i ${{ secrets.SSH_PRIVATE_KEY }} -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/snapshots <<< $'put -rp test.txt'
