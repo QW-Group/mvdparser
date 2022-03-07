@@ -9,4 +9,4 @@ jobs:
     - name: Deploy
       run: |
         touch test.txt
-        sftp -q -i ${{ secrets.SSH_PRIVATE_KEY }} -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/snapshots <<< $'put -rp test.txt'
+        sftp -vvv -i ${{ secrets.SSH_PRIVATE_KEY }} -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/snapshots <<< $'put -rp test.txt'
