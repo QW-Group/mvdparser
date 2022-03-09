@@ -60,16 +60,17 @@ jobs:
         run: |
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
+      - name: Set date
+        run: |
+          echo "DATE=$(date "+%Y%m%d-%H%M%S")" >> $GITHUB_ENV
       - name: Deploy
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-          DATE: $(date "+%Y%m%d-%H%M%S")
         run: |
              mkdir -p upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}
              mkdir -p upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}
-             cp build/${{ matrix.target }}/mvdparser${{ matrix.ext }} upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/$DATE_${GITHUB_SHA::7}_mvdparser${{ matrix.ext }}
-             cp build/${{ matrix.target }}/mvdparser.md5 upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/$DATE_${GITHUB_SHA::7}_mvdparser.md5
+             cp build/${{ matrix.target }}/mvdparser${{ matrix.ext }} upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_mvdparser${{ matrix.ext }}
+             cp build/${{ matrix.target }}/mvdparser.md5 upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}/${{ env.DATE }}_${GITHUB_SHA::7}_mvdparser.md5
              cp build/${{ matrix.target }}/mvdparser${{ matrix.ext }} upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/mvdparser${{ matrix.ext }}
              cp build/${{ matrix.target }}/mvdparser.md5 upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}/mvdparser.md5
-             ls -la -R upload/
              sftp -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/snapshots <<< $'put -rp upload/snapshots/*'
