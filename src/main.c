@@ -4,13 +4,13 @@
 #include "mvd_parser.h"
 #include "frag_parser.h"
 #include "logger.h"
+#include "version.h"
 
 cmdline_params_t cmdargs;
 
 void ShowHelp(char *filename)
 {
-	printf("MVD Parser, version 0.1 (build %s)\n", GIT_COMMIT);
-	printf("(c) Joakim S?derberg\n");
+	printf("MVD Parser, version %s (build %s)\n", MOD_VERSION, GIT_COMMIT);
 	printf("\n");
 	printf("Usage:\n");
 	printf("  %s [-f <fragfile>] [-t <template>] [-v[v[v]]] <demoname>\n", filename);
