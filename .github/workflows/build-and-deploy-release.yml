@@ -68,8 +68,8 @@ jobs:
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-             mkdir -p upload/snapshots/${{ matrix.os }}/${{ matrix.arch }}
-             mkdir -p upload/snapshots/latest/${{ matrix.os }}/${{ matrix.arch }}
+             mkdir -p upload/releases/${{ matrix.os }}/${{ matrix.arch }}
+             mkdir -p upload/releases/latest/${{ matrix.os }}/${{ matrix.arch }}
              cp build/${{ matrix.target }}/mvdparser${{ matrix.ext }} upload/releases/${{ github.ref_name }}/${{ matrix.os }}/${{ matrix.arch }}/mvdparser${{ matrix.ext }}
              cp build/${{ matrix.target }}/mvdparser.md5 upload/releases/${{ github.ref_name }}/${{ matrix.os }}/${{ matrix.arch }}/mvdparser.md5
              cp build/${{ matrix.target }}/mvdparser${{ matrix.ext }} upload/releases/latest/${{ matrix.os }}/${{ matrix.arch }}/mvdparser${{ matrix.ext }}
