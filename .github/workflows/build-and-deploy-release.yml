@@ -74,4 +74,4 @@ jobs:
              cp build/${{ matrix.target }}/mvdparser.md5 upload/releases/${{ github.ref_name }}/${{ matrix.os }}/${{ matrix.arch }}/mvdparser.md5
              cp build/${{ matrix.target }}/mvdparser${{ matrix.ext }} upload/releases/latest/${{ matrix.os }}/${{ matrix.arch }}/mvdparser${{ matrix.ext }}
              cp build/${{ matrix.target }}/mvdparser.md5 upload/releases/latest/${{ matrix.os }}/${{ matrix.arch }}/mvdparser.md5
-             sftp -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/snapshots <<< $'put -rp upload/snapshots/*'
+             sftp -rp -o 'StrictHostKeyChecking no' -o 'UserKnownHostsFile /dev/null' -P ${{ secrets.SFTP_PORT }} ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:/snapshots <<< $'put -rp upload/releases/*'
