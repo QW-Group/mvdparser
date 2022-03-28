@@ -4,6 +4,7 @@ on:
     types: [published]
 jobs:
   build:
+    if: github.repository == 'QW-Group/mvdparser'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

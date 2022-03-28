@@ -2,6 +2,7 @@ name: build and deploy snapshots
 on: [push]
 jobs:
   build:
+    if: github.repository == 'QW-Group/mvdparser'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
