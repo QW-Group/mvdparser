@@ -587,7 +587,7 @@ typedef struct temp_entity_list_s
 	int				count;
 } temp_entity_list_t;
 
-temp_entity_list_t	temp_entities;
+extern temp_entity_list_t	temp_entities;
 
 // Protocol extensions
 #define PROTOCOL_VERSION_FTE    (('F'<<0) + ('T'<<8) + ('E'<<16) + ('X' << 24)) //fte extensions.
