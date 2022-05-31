@@ -897,6 +897,7 @@ static void NetMsg_Parser_Parse_svc_updatefrags(mvd_info_t *mvd)
 	Sys_PrintDebug(2, "svc_updatefrags: Pnum = %i Userid = %i Name = %s Prev = %i ", pnum, mvd->players[pnum].userid, mvd->players[pnum].name, mvd->players[pnum].frags);
 	mvd->players[pnum].frags = MSG_ReadShort();	// Frags.
 	Sys_PrintDebug(2, "New = %i\n", mvd->players[pnum].frags);
+	Log_Event(&logger, mvd, LOG_FRAG, pnum);
 }
 
 static void NetMsg_Parser_Parse_svc_stopsound(void)

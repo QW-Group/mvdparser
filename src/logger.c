@@ -86,6 +86,10 @@ static log_eventlogger_type_t Log_ParseEventloggerType(const char *event_logger_
 	{
 		return LOG_DEATH;
 	}
+	if (!strcasecmp(event_logger_type, "FRAG"))
+	{
+		return LOG_FRAG;
+	}
 	else if (!strcasecmp(event_logger_type, "MOVE"))
 	{
 		return LOG_MOVE;
