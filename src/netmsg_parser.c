@@ -1292,8 +1292,9 @@ static void NetMsg_Parser_Parse_svc_maxspeed(mvd_info_t *mvd)
 	mvd->serverinfo.movevars.maxspeed = MSG_ReadFloat();
 }
 
-static void NetMsg_Parser_Parse_svc_entgravity(void)
+static void NetMsg_Parser_Parse_svc_entgravity(mvd_info_t *mvd)
 {
+	mvd->serverinfo.movevars.gravity = MSG_ReadFloat();
 }
 
 static void NetMsg_Parser_Parse_svc_setinfo(mvd_info_t *mvd)
@@ -1619,6 +1620,9 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 				NetMsg_Parser_Parse_svc_maxspeed(mvd);
 				break;
 			}
+			case svc_entgravity :
+				NetMsg_Parser_Parse_svc_entgravity(mvd);
+				break;
 			case svc_nails2 :
 			{
 				NetMsg_Parser_Parse_svc_nails2();
