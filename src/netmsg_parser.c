@@ -1419,7 +1419,7 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 		{
 			default :
 			{
-				Sys_PrintError("CL_ParseServerMessage: Unknown cmd type.\n");
+				Sys_PrintError("CL_ParseServerMessage: Unknown cmd type (%d).\n", cmd);
 				return false;
 			}
 			case svc_nop :
