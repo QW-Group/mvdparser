@@ -1032,6 +1032,21 @@ static char *LogVar_pentcount(mvd_info_t *mvd, const char *varname, int player_n
 	return va("%i", mvd->players[player_num].pent_count);
 }
 
+static char* LogVar_flagtouch(mvd_info_t* mvd, const char* varname, int player_num)
+{
+	return va("%d", mvd->fragstats[player_num].flag_touches);
+}
+
+static char* LogVar_flagdrop(mvd_info_t* mvd, const char* varname, int player_num)
+{
+	return va("%d", mvd->fragstats[player_num].flag_dropped);
+}
+
+static char* LogVar_flagcap(mvd_info_t* mvd, const char* varname, int player_num)
+{
+	return va("%d", mvd->fragstats[player_num].flag_captured);
+}
+
 static char *LogVar_avgspeed(mvd_info_t *mvd, const char *varname, int player_num)
 {
 	if (mvd->players[player_num].speed_frame_count > 0)
@@ -1382,7 +1397,10 @@ logvar_t logvar_list[] =
 	LOGVAR_DEFINE(droppedweapon, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(droppedweaponstr, LOGVAR_PLAYER),
 	LOGVAR_DEFINE(teamkills, LOGVAR_PLAYER),
-	LOGVAR_DEFINE(suicides, LOGVAR_PLAYER)
+	LOGVAR_DEFINE(suicides, LOGVAR_PLAYER),
+	LOGVAR_DEFINE(flagtouch, LOGVAR_PLAYER),
+	LOGVAR_DEFINE(flagdrop, LOGVAR_PLAYER),
+	LOGVAR_DEFINE(flagcap, LOGVAR_PLAYER)
 };
 
 #define LOGVARS_LIST_SIZE		(sizeof(logvar_list) / sizeof(logvar_t))
