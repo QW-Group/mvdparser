@@ -649,21 +649,8 @@ static void NetMsg_Parser_Parse_svc_sound(mvd_info_t *mvd)
 	Sys_PrintDebug(5, "svc_sound: %s (x: %g y: %g z: %g)\n", mvd->sndlist[soundnum], loc[0], loc[1], loc[2]);
 }
 
-static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
+static void NetMsg_Parser_Parse_svc_print_match(mvd_info_t *mvd, int level, char *str)
 {
-	int level = MSG_ReadByte();
-	char str[MAX_INFO_STRING];
-
-	strlcpy(str, MSG_ReadString(), sizeof(str)); 
-
-	// TODO : Check for frag messages spread over several svc_prints older mods/servers does this crap :(
-	if (str[strlen(str) - 1] == '\n') {
-		str[strlen(str) - 1] = '\0';
-	}
-
-	Sys_PrintDebug(5, "svc_print: (%s) RAW: %s\n", print_strings[level], str);
-	Sys_PrintDebug(1, "svc_print: (%s) %s\n", print_strings[level], Sys_RedToWhite(str));
-	
 	// Parse frags.
 	Frags_Parse(mvd, str, level);
 
@@ -755,6 +742,38 @@ static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
 			mvd->serverinfo.player_timout_frame	= mvd->frame_count;
 			Sys_PrintDebug(1, "Warning: Player timed out!");
 		}
+	}
+}
+
+// For keeping track of old messages if future matches span multiple lines.
+static char svc_print_buf[4096] = {0};
+
+static void NetMsg_Parser_Parse_svc_print(mvd_info_t *mvd)
+{
+	int level = MSG_ReadByte();
+	char *msg = MSG_ReadString();
+	char *ptr;
+
+	if (strlen(svc_print_buf) + strlen(msg) > sizeof(svc_print_buf)) {
+		strlcpy(svc_print_buf, msg, sizeof(svc_print_buf));
+	} else {
+		strcat(svc_print_buf, msg);
+	}
+
+	while ((ptr = strchr(svc_print_buf, '\n')) || (ptr = strchr(svc_print_buf, '\r')))
+	{
+		char n = ptr[1];
+		ptr[1] = '\0';
+
+		Sys_PrintDebug(5, "svc_print: (%s) RAW: %s\n", print_strings[level], svc_print_buf);
+		Sys_PrintDebug(1, "svc_print: (%s) %s\n", print_strings[level], Sys_RedToWhite(svc_print_buf));
+
+		NetMsg_Parser_Parse_svc_print_match(mvd, level, svc_print_buf);
+
+		ptr[1] = n;
+		ptr++;
+
+		memmove(svc_print_buf, ptr, strlen(ptr) + 1);
 	}
 }
 
