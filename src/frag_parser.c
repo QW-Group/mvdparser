@@ -736,18 +736,21 @@ void Frags_Parse(mvd_info_t *mvd, char *fragmessage, int level)
 		{
 			mvd->fragstats[p1->pnum].flag_touches++;
 			Sys_PrintDebug(3, "Frags_Parse: %s touched flag\n", p1->name);
+			Log_Event(&logger, mvd, LOG_ITEMPICKUP, p1->pnum);
 			break;
 		}
 		case mt_flagdrop:
 		{		
 			mvd->fragstats[p1->pnum].flag_dropped++;
 			Sys_PrintDebug(3, "Frags_Parse: %s dropped flag\n", p1->name);
+			Log_Event(&logger, mvd, LOG_ITEMPICKUP, p1->pnum);
 			break;
 		}
 		case mt_flagcap:
 		{
 			mvd->fragstats[p1->pnum].flag_captured++;
 			Sys_PrintDebug(3, "Frags_Parse: %s captured flag\n", p1->name);
+			Log_Event(&logger, mvd, LOG_ITEMPICKUP, p1->pnum);
 			break;
 		}
 	}
