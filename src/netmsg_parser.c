@@ -1247,6 +1247,18 @@ static void NetMsg_Parser_Parse_svc_playerinfo(mvd_info_t *mvd)
 
 static void NetMsg_Parser_Parse_svc_nails(void)
 {
+	int i;
+	int j;
+	int nailcount = MSG_ReadByte();
+
+	for (i = 0; i < nailcount; i++)
+	{
+		// Bits for origin and angles.
+		for (j = 0; j < 6; j++)
+		{
+			MSG_ReadByte();
+		}
+	}
 }
 
 static void NetMsg_Parser_Parse_svc_chokecount(void)
@@ -1643,6 +1655,11 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			case svc_entgravity :
 				NetMsg_Parser_Parse_svc_entgravity(mvd);
 				break;
+			case svc_nails :
+			{
+				NetMsg_Parser_Parse_svc_nails();
+				break;
+			}
 			case svc_nails2 :
 			{
 				NetMsg_Parser_Parse_svc_nails2();
