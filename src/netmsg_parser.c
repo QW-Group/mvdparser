@@ -1347,8 +1347,10 @@ static void NetMsg_Parser_Parse_svc_setinfo(mvd_info_t *mvd)
 	
 	if (!strcmp(key, "name"))
 	{
-		Sys_PrintDebug(1, "svc_setinfo: Player %i renamed from %s to %s\n", pnum, player->name, value);
+		Sys_PrintDebug(1, "svc_setinfo: Player %i renamed from %s to %s\n", pnum, player->name_raw, value);
+		strlcpy(player->name_raw, value, sizeof(player->name_raw));
 		strlcpy(player->name, value, sizeof(player->name));
+		Sys_RedToWhite(player->name);
 	}
 }
 
