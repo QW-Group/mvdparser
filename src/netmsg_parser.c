@@ -1352,6 +1352,14 @@ static void NetMsg_Parser_Parse_svc_setinfo(mvd_info_t *mvd)
 		strlcpy(player->name, value, sizeof(player->name));
 		Sys_RedToWhite(player->name);
 	}
+
+    if (!strcmp(key, "team"))
+	{
+		Sys_PrintDebug(1, "svc_setinfo: Player %i changed team from %s to %s\n", pnum, player->team_raw, value);
+		strlcpy(player->team_raw, value, sizeof(player->team_raw));
+		strlcpy(player->team, value, sizeof(player->team));
+		Sys_RedToWhite(player->team);
+	}
 }
 
 static void NetMsg_Parser_Parse_svc_serverinfo(mvd_info_t *mvd)
