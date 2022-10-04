@@ -1374,12 +1374,30 @@ static void NetMsg_Parser_Parse_svc_serverinfo(mvd_info_t *mvd)
 
 	if (!mvd->serverinfo.match_started && !strcmp(key, "status") && strcmp(value, "Countdown"))
 	{
+		int i;
+		qbool any = false;
+
 		// TODO : Do a better check here maybe?
 		// If the status is not countdown, the match has started.
 		mvd->serverinfo.match_started = true;
 		mvd->match_start_demotime = mvd->demotime;
 
 		Log_Event(&logger, mvd, LOG_MATCHSTART, -1);
+
+		for (i = 0; i < MAX_PLAYERS; i++)
+		{
+			if (!PLAYER_ISVALID(&mvd->players[i]))
+			{
+				continue;
+			}
+
+			if (any)
+				Log_Event(&logger, mvd, LOG_MATCHSTART_ALL_BETWEEN, i);
+			Log_Event(&logger, mvd, LOG_MATCHSTART_ALL, i);
+			any = true;
+		}
+
+		Log_Event(&logger, mvd, LOG_MATCHSTART_FINAL, -1);
 	}
 
 	NetMsg_Parser_ParseServerInfo(mvd);

@@ -98,6 +98,18 @@ static log_eventlogger_type_t Log_ParseEventloggerType(const char *event_logger_
 	{
 		return LOG_MATCHSTART;
 	}
+	else if (!strcasecmp(event_logger_type, "MATCHSTART_ALL"))
+	{
+		return LOG_MATCHSTART_ALL;
+	}
+	else if (!strcasecmp(event_logger_type, "MATCHSTART_ALL_BETWEEN"))
+	{
+		return LOG_MATCHSTART_ALL_BETWEEN;
+	}
+	else if (!strcasecmp(event_logger_type, "MATCHSTART_FINAL"))
+	{
+		return LOG_MATCHSTART_FINAL;
+	}
 	else if (!strcasecmp(event_logger_type, "MATCHEND"))
 	{
 		return LOG_MATCHEND;
