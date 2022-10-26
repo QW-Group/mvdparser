@@ -24,10 +24,6 @@ None at the moment.
 
 ## Building binaries
 
-### Build from source with mingw32-make in cygwin
-
-Navigate to Makefile in cygwin terminal and use mingw32-make to make.
-
 ### Build from source with CMake
 
 Assuming you have installed essential build tools and ``CMake``
@@ -66,6 +62,10 @@ force CMake generator to be unix makefiles
 
 build MVDPARSER for ``linux-amd64`` version, you can provide
 any platform combinations.
+
+### Build from source with mingw32-make in cygwin
+
+Navigate to Makefile in cygwin terminal and use mingw32-make to make.
 
 ## Versioning
 
