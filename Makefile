@@ -16,7 +16,7 @@ ifeq "$(OS)" "linux"
 	CC=$(CC_LIN)
 else	## windows
 	SOURCES = src/frag_parser.c src/logger.c src/main.c src/mvd_parser.c src/net_msg.c src/netmsg_parser.c src/qw_protocol.c src/shared.c src/strptime.c src/sys_win.c
-	CC=$(CC_WIN) -mno-cygwin -L/lib/w32api
+	CC=$(CC_WIN) -L/lib/w32api
 	CCFLAGS+=-Wl,--allow-multiple-definition -Wl,--enable-auto-import
 	EXTRA_LIBS=-lwinmm
 
