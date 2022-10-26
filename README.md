@@ -65,7 +65,13 @@ any platform combinations.
 
 ### Build from source with mingw32-make in cygwin
 
-Navigate to Makefile in cygwin terminal and use mingw32-make to make.
+Install (for cygwin), 
+mingw64-x86_64-gcc-core
+mingw64-i686-gcc-core
+cygwin-mingw
+
+Navigate to Makefile in cygwin.
+Use mingw32-make to make.
 
 ## Versioning
 
