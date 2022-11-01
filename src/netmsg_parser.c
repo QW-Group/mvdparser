@@ -915,6 +915,10 @@ static void NetMsg_Parser_Parse_svc_updatefrags(mvd_info_t *mvd)
 	int pnum = MSG_ReadByte();					// Player.
 	Sys_PrintDebug(2, "svc_updatefrags: Pnum = %i Userid = %i Name = %s Prev = %i ", pnum, mvd->players[pnum].userid, mvd->players[pnum].name, mvd->players[pnum].frags);
 	mvd->players[pnum].frags = MSG_ReadShort();	// Frags.
+	if (mvd->players[pnum].frags > 0)
+	{
+		mvd->players[pnum].is_ghost = false;
+	}
 	Sys_PrintDebug(2, "New = %i\n", mvd->players[pnum].frags);
 	Log_Event(&logger, mvd, LOG_FRAG, pnum);
 }
@@ -1343,8 +1347,18 @@ static void NetMsg_Parser_Parse_svc_setinfo(mvd_info_t *mvd)
 	
 	if (!strcmp(key, "name"))
 	{
-		Sys_PrintDebug(1, "svc_setinfo: Player %i renamed from %s to %s\n", pnum, player->name, value);
+		Sys_PrintDebug(1, "svc_setinfo: Player %i renamed from %s to %s\n", pnum, player->name_raw, value);
+		strlcpy(player->name_raw, value, sizeof(player->name_raw));
 		strlcpy(player->name, value, sizeof(player->name));
+		Sys_RedToWhite(player->name);
+	}
+
+    if (!strcmp(key, "team"))
+	{
+		Sys_PrintDebug(1, "svc_setinfo: Player %i changed team from %s to %s\n", pnum, player->team_raw, value);
+		strlcpy(player->team_raw, value, sizeof(player->team_raw));
+		strlcpy(player->team, value, sizeof(player->team));
+		Sys_RedToWhite(player->team);
 	}
 }
 
@@ -1360,12 +1374,30 @@ static void NetMsg_Parser_Parse_svc_serverinfo(mvd_info_t *mvd)
 
 	if (!mvd->serverinfo.match_started && !strcmp(key, "status") && strcmp(value, "Countdown"))
 	{
+		int i;
+		qbool any = false;
+
 		// TODO : Do a better check here maybe?
 		// If the status is not countdown, the match has started.
 		mvd->serverinfo.match_started = true;
 		mvd->match_start_demotime = mvd->demotime;
 
 		Log_Event(&logger, mvd, LOG_MATCHSTART, -1);
+
+		for (i = 0; i < MAX_PLAYERS; i++)
+		{
+			if (!PLAYER_ISVALID(&mvd->players[i]))
+			{
+				continue;
+			}
+
+			if (any)
+				Log_Event(&logger, mvd, LOG_MATCHSTART_ALL_BETWEEN, i);
+			Log_Event(&logger, mvd, LOG_MATCHSTART_ALL, i);
+			any = true;
+		}
+
+		Log_Event(&logger, mvd, LOG_MATCHSTART_FINAL, -1);
 	}
 
 	NetMsg_Parser_ParseServerInfo(mvd);
