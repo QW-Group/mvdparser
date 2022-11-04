@@ -5,6 +5,20 @@ In QuakeWorld and the popular server MVDSV, it is possible to record server side
 
 This program parses such demos and can output statistics about them in a customized format.
 
+To Run,
+1. 	Extract the files to your windows path dir (eg. c:\path). 
+	You can setup the path dir by nagivating to "Edit the system environment variables" -> System Variables -> Select Path -> Edit... 
+	-> Add ";c:\path" to the Path string variable value (if not already there) -> OK out
+2.  Download the fragfile.dat and template.dat files from the repository's src directory.
+3. 	Open cmd.exe and navigate to dir containing the mvds files
+4. 	Type: mvdparser -f c:\path\fragfile.dat -t c:\path\template.dat <"mvd file">
+5. 	Press enter
+
+mvdparser should produce a set of files containing stats and information about the mvd.
+
+Experiment with verbose settings eg. -v, -vv and -vvv for more interesting output.
+
+
 ## Supported architectures
 
 The following architectures are fully supported by **[MVDPARSER][mvdparser]** and are available as prebuilt binaries:
