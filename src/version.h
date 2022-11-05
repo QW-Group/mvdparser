@@ -1,7 +1,7 @@
 #ifndef SRC_VERSION_H_
 #define SRC_VERSION_H_
 
-#define MOD_VERSION	"1.10"
+#define MOD_VERSION	"1.20-dev"
 #define GIT_COMMIT	""
 
 
