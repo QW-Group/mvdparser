@@ -102,7 +102,7 @@ void Info_RemoveKey(char *s, char *key)
 
 		if (!strcmp(key, pkey))
 		{
-			strcpy(start, s);	// Remove this part.
+			memmove(start, s, strlen(s)+1);	// Remove this part.
 			return;
 		}
 
