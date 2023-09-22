@@ -9,7 +9,7 @@ To Run,
 1. 	Extract the files to your windows path dir (eg. c:\path). 
 	You can setup the path dir by nagivating to "Edit the system environment variables" -> System Variables -> Select Path -> Edit... 
 	-> Add ";c:\path" to the Path string variable value (if not already there) -> OK out
-2.  Download the fragfile.dat and template.dat files from the repository's src directory.
+2.  Download the [fragfile.dat](https://github.com/QW-Group/mvdparser/blob/master/src/fragfile.dat) and [template.dat](https://github.com/QW-Group/mvdparser/blob/master/src/template.dat) files from the repository's src directory.
 3. 	Open cmd.exe and navigate to dir containing the mvds files
 4. 	Type: mvdparser -f c:\path\fragfile.dat -t c:\path\template.dat <"mvd file">
 5. 	Press enter
