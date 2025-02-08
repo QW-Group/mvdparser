@@ -962,6 +962,13 @@ static void NetMsg_Parser_Parse_svc_spawnstatic(void)
 	}
 }
 
+static void NetMsg_Parser_Parse_svc_fte_spawnstatic2(void)
+{
+	unsigned int entnum, bits, morebits;
+	NetMsg_Parser_ParseEntityNum(&entnum, &bits, &morebits);
+	NetMsg_Parser_ParseEntityDelta(bits, morebits);
+}
+
 static void NetMsg_Parser_Parse_svc_spawnbaseline(void)
 {
 	int i;
@@ -977,6 +984,13 @@ static void NetMsg_Parser_Parse_svc_spawnbaseline(void)
 		MSG_ReadCoord();	// Origin.
 		MSG_ReadAngle();	// Angles.
 	}
+}
+
+static void NetMsg_Parser_Parse_svc_fte_spawnbaseline2(void)
+{
+	unsigned int entnum, bits, morebits;
+	NetMsg_Parser_ParseEntityNum(&entnum, &bits, &morebits);
+	NetMsg_Parser_ParseEntityDelta(bits, morebits);
 }
 
 static void NetMsg_Parser_Parse_svc_temp_entity(void)
@@ -1596,6 +1610,11 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 				NetMsg_Parser_Parse_svc_spawnbaseline();
 				break;
 			}
+			case svc_fte_spawnbaseline2 :
+			{
+				NetMsg_Parser_Parse_svc_fte_spawnbaseline2();
+				break;
+			}
 			case svc_updatefrags :
 			{
 				NetMsg_Parser_Parse_svc_updatefrags(mvd);
@@ -1709,6 +1728,11 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			case svc_spawnstatic :
 			{
 				NetMsg_Parser_Parse_svc_spawnstatic();
+				break;
+			}
+			case svc_fte_spawnstatic2 :
+			{
+				NetMsg_Parser_Parse_svc_fte_spawnstatic2();
 				break;
 			}
 			case svc_foundsecret :

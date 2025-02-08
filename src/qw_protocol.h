@@ -89,7 +89,7 @@ extern char *print_strings[];		// Contains descriptions of the print levels.
 #define	svc_damage				19
 	
 #define	svc_spawnstatic			20
-//	svc_spawnbinary				21
+#define svc_fte_spawnstatic2	21
 #define	svc_spawnbaseline		22
 	
 #define	svc_temp_entity			23	// variable
@@ -138,6 +138,7 @@ extern char *print_strings[];		// Contains descriptions of the print levels.
 #define svc_serverinfo			52		// serverinfo
 #define svc_updatepl			53		// [byte] [byte]
 #define svc_nails2				54		
+#define svc_fte_spawnbaseline2	66
 #define svc_qizmovoice			83
 
 //==============================================
