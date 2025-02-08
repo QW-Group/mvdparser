@@ -546,6 +546,9 @@ static void NetMsg_Parser_ParseEntityDelta(unsigned int bits, unsigned int moreb
 {
 	if (bits & U_MODEL)
 		MSG_ReadByte();
+	else if (morebits & U_FTE_MODELDBL)
+		MSG_ReadShort();
+
 	if (bits & U_FRAME)
 		MSG_ReadByte();
 	if (bits & U_COLORMAP)
@@ -1288,10 +1291,10 @@ static void NetMsg_Parser_Parse_svc_chokecount(void)
 	MSG_ReadByte();
 }
 
-static void NetMsg_Parser_Parse_svc_modellist(void)
+static void NetMsg_Parser_Parse_svc_modellist(qbool extended)
 {
 	char *str;
-	int model_count = MSG_ReadByte();
+	int model_count = extended ? MSG_ReadShort() : MSG_ReadByte();
 
 	while (true)
 	{
@@ -1592,7 +1595,12 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			}
 			case svc_modellist :
 			{
-				NetMsg_Parser_Parse_svc_modellist();
+				NetMsg_Parser_Parse_svc_modellist(false);
+				break;
+			}
+			case svc_fte_modellistshort :
+			{
+				NetMsg_Parser_Parse_svc_modellist(true);
 				break;
 			}
 			case svc_soundlist :

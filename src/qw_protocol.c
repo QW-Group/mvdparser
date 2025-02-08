@@ -78,7 +78,7 @@ char *svc_strings[] =
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
-	"NEW PROTOCOL",
+	"svc_fte_modellistshort",
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",

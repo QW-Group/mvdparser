@@ -138,6 +138,7 @@ extern char *print_strings[];		// Contains descriptions of the print levels.
 #define svc_serverinfo			52		// serverinfo
 #define svc_updatepl			53		// [byte] [byte]
 #define svc_nails2				54		
+#define svc_fte_modellistshort  60
 #define svc_fte_spawnbaseline2	66
 #define svc_qizmovoice			83
 
