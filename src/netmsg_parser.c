@@ -566,6 +566,9 @@ static void NetMsg_Parser_ParseEntityDelta(unsigned int bits, unsigned int moreb
 		MSG_ReadAngle();
 	if (bits & U_ANGLE3)
 		MSG_ReadAngle();
+
+	if (morebits & U_FTE_TRANS)
+		MSG_ReadByte();
 }
 
 // ========================================================================================
