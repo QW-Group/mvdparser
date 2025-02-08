@@ -510,68 +510,45 @@ static void SetStat(mvd_info_t *mvd, int stat, int value)
 	cp->stats[stat] = value;
 }
 
-static void NetMsg_Parser_ParsePacketEntities(mvd_info_t *mvd, qbool delta)
+static void NetMsg_Parser_ParseEntityNum(unsigned int *entnum, unsigned int *bits)
 {
-	byte from;
-	int bits;
+	*entnum = *bits = 0;
 
-	if (delta)
+	*bits = MSG_ReadShort();
+
+	*entnum = *bits & 0x1FF;
+	*bits &= ~0x1FF;
+
+	if (*bits & U_MOREBITS)
 	{
-		from = MSG_ReadByte();
-
-		if ((outgoing_sequence - incoming_sequence - 1) >= UPDATE_MASK)
-		{
-			return;
-		}
+		*bits |= MSG_ReadByte();
 	}
+}
 
-	while (true)
-	{
-		bits = MSG_ReadShort();
-
-		if (msg_badread)
-		{
-			// Something didn't parse right...
-			Sys_PrintError("NetMsg_Parser_ParsePacketEntities: msg_badread in packetentities.\n");
-			return;
-		}
-
-		if (!bits)
-		{
-			break;
-		}
-
-		bits &= ~0x1FF; // Strip the first 9 bits.
-
-		// Read any more bits.
-		if (bits & U_MOREBITS)
-		{
-			bits |= MSG_ReadByte();
-		}
-
-		if (bits & U_MODEL)
-			MSG_ReadByte();
-		if (bits & U_FRAME)
-			MSG_ReadByte();
-		if (bits & U_COLORMAP)
-			MSG_ReadByte();
-		if (bits & U_SKIN)
-			MSG_ReadByte();
-		if (bits & U_EFFECTS)
-			MSG_ReadByte();
-		if (bits & U_ORIGIN1)
-			MSG_ReadCoord();
-		if (bits & U_ORIGIN2)
-			MSG_ReadCoord();
-		if (bits & U_ORIGIN3)
-			MSG_ReadCoord();
-		if (bits & U_ANGLE1)
-			MSG_ReadAngle();
-		if (bits & U_ANGLE2)
-			MSG_ReadAngle();
-		if (bits & U_ANGLE3)
-			MSG_ReadAngle();
-	}
+static void NetMsg_Parser_ParseEntityDelta(unsigned int bits)
+{
+	if (bits & U_MODEL)
+		MSG_ReadByte();
+	if (bits & U_FRAME)
+		MSG_ReadByte();
+	if (bits & U_COLORMAP)
+		MSG_ReadByte();
+	if (bits & U_SKIN)
+		MSG_ReadByte();
+	if (bits & U_EFFECTS)
+		MSG_ReadByte();
+	if (bits & U_ORIGIN1)
+		MSG_ReadCoord();
+	if (bits & U_ORIGIN2)
+		MSG_ReadCoord();
+	if (bits & U_ORIGIN3)
+		MSG_ReadCoord();
+	if (bits & U_ANGLE1)
+		MSG_ReadAngle();
+	if (bits & U_ANGLE2)
+		MSG_ReadAngle();
+	if (bits & U_ANGLE3)
+		MSG_ReadAngle();
 }
 
 // ========================================================================================
@@ -1311,6 +1288,39 @@ static void NetMsg_Parser_Parse_svc_soundlist(mvd_info_t *mvd)
 	}
 
 	MSG_ReadByte(); // Ignore.
+}
+
+static void NetMsg_Parser_ParsePacketEntities(mvd_info_t *mvd, qbool delta)
+{
+	if (delta)
+	{
+		MSG_ReadByte();
+		if ((outgoing_sequence - incoming_sequence - 1) >= UPDATE_MASK)
+		{
+			return;
+		}
+	}
+
+	while (true)
+	{
+		unsigned int entnum, bits;
+
+		NetMsg_Parser_ParseEntityNum(&entnum, &bits);
+
+		if (msg_badread)
+		{
+			// Something didn't parse right...
+			Sys_PrintError("NetMsg_Parser_ParsePacketEntities: msg_badread in packetentities.\n");
+			return;
+		}
+
+		if (!entnum)
+		{
+			break;
+		}
+
+		NetMsg_Parser_ParseEntityDelta(bits);
+	}
 }
 
 static void NetMsg_Parser_Parse_svc_packetentities(mvd_info_t *mvd)
