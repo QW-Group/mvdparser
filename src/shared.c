@@ -156,6 +156,7 @@ size_t strlcpy(char *dst, const char *src, size_t siz)
 }
 #endif // LINUX & WIN32
 
+#if !defined(__APPLE__)
 size_t strlcat(char *dst, const char *src, size_t siz)
 {
 	register char *d = dst;
@@ -185,6 +186,7 @@ size_t strlcat(char *dst, const char *src, size_t siz)
 
 	return(dlen + (s - src));       /* count does not include NUL */
 }
+#endif
 
 // Implemented in later versions of Visual Studio (https://stackoverflow.com/questions/2915672/snprintf-and-visual-studio-2010)
 #if defined(_MSC_VER) && _MSC_VER < 1900
