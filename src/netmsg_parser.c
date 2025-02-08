@@ -569,6 +569,13 @@ static void NetMsg_Parser_ParseEntityDelta(unsigned int bits, unsigned int moreb
 
 	if (morebits & U_FTE_TRANS)
 		MSG_ReadByte();
+
+	if (morebits & U_FTE_COLOURMOD)
+	{
+		MSG_ReadByte(); // r
+		MSG_ReadByte(); // g
+		MSG_ReadByte(); // b
+	}
 }
 
 // ========================================================================================
