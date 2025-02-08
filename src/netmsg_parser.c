@@ -510,9 +510,9 @@ static void SetStat(mvd_info_t *mvd, int stat, int value)
 	cp->stats[stat] = value;
 }
 
-static void NetMsg_Parser_ParseEntityNum(unsigned int *entnum, unsigned int *bits)
+static void NetMsg_Parser_ParseEntityNum(unsigned int *entnum, unsigned int *bits, unsigned int *morebits)
 {
-	*entnum = *bits = 0;
+	*entnum = *bits = *morebits = 0;
 
 	*bits = MSG_ReadShort();
 
@@ -522,10 +522,27 @@ static void NetMsg_Parser_ParseEntityNum(unsigned int *entnum, unsigned int *bit
 	if (*bits & U_MOREBITS)
 	{
 		*bits |= MSG_ReadByte();
+		if (*bits & U_FTE_EVENMORE)
+		{
+			*morebits = MSG_ReadByte();
+			if (*morebits & U_FTE_YETMORE)
+			{
+				*morebits |= MSG_ReadByte() << 8;
+			}
+
+			if (*morebits & U_FTE_ENTITYDBL)
+			{
+				*entnum += 512;
+			}
+			if (*morebits & U_FTE_ENTITYDBL2)
+			{
+				*entnum += 1024;
+			}
+		}
 	}
 }
 
-static void NetMsg_Parser_ParseEntityDelta(unsigned int bits)
+static void NetMsg_Parser_ParseEntityDelta(unsigned int bits, unsigned int morebits)
 {
 	if (bits & U_MODEL)
 		MSG_ReadByte();
@@ -1303,9 +1320,9 @@ static void NetMsg_Parser_ParsePacketEntities(mvd_info_t *mvd, qbool delta)
 
 	while (true)
 	{
-		unsigned int entnum, bits;
+		unsigned int entnum, bits, morebits;
 
-		NetMsg_Parser_ParseEntityNum(&entnum, &bits);
+		NetMsg_Parser_ParseEntityNum(&entnum, &bits, &morebits);
 
 		if (msg_badread)
 		{
@@ -1319,7 +1336,7 @@ static void NetMsg_Parser_ParsePacketEntities(mvd_info_t *mvd, qbool delta)
 			break;
 		}
 
-		NetMsg_Parser_ParseEntityDelta(bits);
+		NetMsg_Parser_ParseEntityDelta(bits, morebits);
 	}
 }
 

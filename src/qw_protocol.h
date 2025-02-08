@@ -221,14 +221,24 @@ extern char *print_strings[];		// Contains descriptions of the print levels.
 #define	U_MOREBITS	(1 << 15)
 
 // if MOREBITS is set, these additional flags are read in next
-#define	U_ANGLE1	(1 << 0)
-#define	U_ANGLE3	(1 << 1)
-#define	U_MODEL		(1 << 2)
-#define	U_COLORMAP	(1 << 3)
-#define	U_SKIN		(1 << 4)
-#define	U_EFFECTS	(1 << 5)
-#define	U_SOLID		(1 << 6)		// the entity should be solid for prediction
+#define	U_ANGLE1		(1 << 0)
+#define	U_ANGLE3		(1 << 1)
+#define	U_MODEL			(1 << 2)
+#define	U_COLORMAP		(1 << 3)
+#define	U_SKIN			(1 << 4)
+#define	U_EFFECTS		(1 << 5)
+#define	U_SOLID			(1 << 6)		// the entity should be solid for prediction
+#define	U_FTE_EVENMORE	(1 << 7)
 
+// if EVENMORE is set, these additional flags are read in next
+#define	U_FTE_TRANS			(1 << 1)
+#define	U_FTE_MODELDBL		(1 << 3)
+#define	U_FTE_ENTITYDBL		(1 << 5)
+#define	U_FTE_ENTITYDBL2	(1 << 6)
+#define	U_FTE_YETMORE		(1 << 7)
+
+// if YETMORE is set, these additional flags are read in next
+#define	U_FTE_COLOURMOD	(1 << 10)
 //==============================================
 
 // a sound with no channel is a local only sound
