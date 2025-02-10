@@ -17,7 +17,7 @@
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <semaphore.h>
-#ifndef __FreeBSD__
+#if !defined(__FreeBSD__) && !defined(__APPLE__)
 #include <linux/rtc.h>
 #endif
 #include <sys/ioctl.h>

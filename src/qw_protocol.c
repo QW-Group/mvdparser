@@ -33,7 +33,7 @@ char *svc_strings[] =
 	"svc_damage",			// [byte] impact [byte] blood [vec3] from
 
 	"svc_spawnstatic",
-	"OBSOLETE svc_spawnbinary",
+	"svc_fte_spawnstatic2",
 	"svc_spawnbaseline",
 
 	"svc_temp_entity",		// <variable>
@@ -78,13 +78,13 @@ char *svc_strings[] =
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
+	"svc_fte_modellistshort",
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
 	"NEW PROTOCOL",
-	"NEW PROTOCOL",
-	"NEW PROTOCOL"
+	"svc_fte_spawnbaseline2"
 };
 
 

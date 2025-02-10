@@ -510,67 +510,74 @@ static void SetStat(mvd_info_t *mvd, int stat, int value)
 	cp->stats[stat] = value;
 }
 
-static void NetMsg_Parser_ParsePacketEntities(mvd_info_t *mvd, qbool delta)
+static void NetMsg_Parser_ParseEntityNum(unsigned int *entnum, unsigned int *bits, unsigned int *morebits)
 {
-	byte from;
-	int bits;
+	*entnum = *bits = *morebits = 0;
 
-	if (delta)
+	*bits = MSG_ReadShort();
+
+	*entnum = *bits & 0x1FF;
+	*bits &= ~0x1FF;
+
+	if (*bits & U_MOREBITS)
 	{
-		from = MSG_ReadByte();
-
-		if ((outgoing_sequence - incoming_sequence - 1) >= UPDATE_MASK)
+		*bits |= MSG_ReadByte();
+		if (*bits & U_FTE_EVENMORE)
 		{
-			return;
+			*morebits = MSG_ReadByte();
+			if (*morebits & U_FTE_YETMORE)
+			{
+				*morebits |= MSG_ReadByte() << 8;
+			}
+
+			if (*morebits & U_FTE_ENTITYDBL)
+			{
+				*entnum += 512;
+			}
+			if (*morebits & U_FTE_ENTITYDBL2)
+			{
+				*entnum += 1024;
+			}
 		}
 	}
+}
 
-	while (true)
+static void NetMsg_Parser_ParseEntityDelta(unsigned int bits, unsigned int morebits)
+{
+	if (bits & U_MODEL)
+		MSG_ReadByte();
+	else if (morebits & U_FTE_MODELDBL)
+		MSG_ReadShort();
+
+	if (bits & U_FRAME)
+		MSG_ReadByte();
+	if (bits & U_COLORMAP)
+		MSG_ReadByte();
+	if (bits & U_SKIN)
+		MSG_ReadByte();
+	if (bits & U_EFFECTS)
+		MSG_ReadByte();
+	if (bits & U_ORIGIN1)
+		MSG_ReadCoord();
+	if (bits & U_ORIGIN2)
+		MSG_ReadCoord();
+	if (bits & U_ORIGIN3)
+		MSG_ReadCoord();
+	if (bits & U_ANGLE1)
+		MSG_ReadAngle();
+	if (bits & U_ANGLE2)
+		MSG_ReadAngle();
+	if (bits & U_ANGLE3)
+		MSG_ReadAngle();
+
+	if (morebits & U_FTE_TRANS)
+		MSG_ReadByte();
+
+	if (morebits & U_FTE_COLOURMOD)
 	{
-		bits = MSG_ReadShort();
-
-		if (msg_badread)
-		{
-			// Something didn't parse right...
-			Sys_PrintError("NetMsg_Parser_ParsePacketEntities: msg_badread in packetentities.\n");
-			return;
-		}
-
-		if (!bits)
-		{
-			break;
-		}
-
-		bits &= ~0x1FF; // Strip the first 9 bits.
-
-		// Read any more bits.
-		if (bits & U_MOREBITS)
-		{
-			bits |= MSG_ReadByte();
-		}
-
-		if (bits & U_MODEL)
-			MSG_ReadByte();
-		if (bits & U_FRAME)
-			MSG_ReadByte();
-		if (bits & U_COLORMAP)
-			MSG_ReadByte();
-		if (bits & U_SKIN)
-			MSG_ReadByte();
-		if (bits & U_EFFECTS)
-			MSG_ReadByte();
-		if (bits & U_ORIGIN1)
-			MSG_ReadCoord();
-		if (bits & U_ORIGIN2)
-			MSG_ReadCoord();
-		if (bits & U_ORIGIN3)
-			MSG_ReadCoord();
-		if (bits & U_ANGLE1)
-			MSG_ReadAngle();
-		if (bits & U_ANGLE2)
-			MSG_ReadAngle();
-		if (bits & U_ANGLE3)
-			MSG_ReadAngle();
+		MSG_ReadByte(); // r
+		MSG_ReadByte(); // g
+		MSG_ReadByte(); // b
 	}
 }
 
@@ -958,6 +965,13 @@ static void NetMsg_Parser_Parse_svc_spawnstatic(void)
 	}
 }
 
+static void NetMsg_Parser_Parse_svc_fte_spawnstatic2(void)
+{
+	unsigned int entnum, bits, morebits;
+	NetMsg_Parser_ParseEntityNum(&entnum, &bits, &morebits);
+	NetMsg_Parser_ParseEntityDelta(bits, morebits);
+}
+
 static void NetMsg_Parser_Parse_svc_spawnbaseline(void)
 {
 	int i;
@@ -973,6 +987,13 @@ static void NetMsg_Parser_Parse_svc_spawnbaseline(void)
 		MSG_ReadCoord();	// Origin.
 		MSG_ReadAngle();	// Angles.
 	}
+}
+
+static void NetMsg_Parser_Parse_svc_fte_spawnbaseline2(void)
+{
+	unsigned int entnum, bits, morebits;
+	NetMsg_Parser_ParseEntityNum(&entnum, &bits, &morebits);
+	NetMsg_Parser_ParseEntityDelta(bits, morebits);
 }
 
 static void NetMsg_Parser_Parse_svc_temp_entity(void)
@@ -1270,10 +1291,10 @@ static void NetMsg_Parser_Parse_svc_chokecount(void)
 	MSG_ReadByte();
 }
 
-static void NetMsg_Parser_Parse_svc_modellist(void)
+static void NetMsg_Parser_Parse_svc_modellist(qbool extended)
 {
 	char *str;
-	int model_count = MSG_ReadByte();
+	int model_count = extended ? MSG_ReadShort() : MSG_ReadByte();
 
 	while (true)
 	{
@@ -1311,6 +1332,39 @@ static void NetMsg_Parser_Parse_svc_soundlist(mvd_info_t *mvd)
 	}
 
 	MSG_ReadByte(); // Ignore.
+}
+
+static void NetMsg_Parser_ParsePacketEntities(mvd_info_t *mvd, qbool delta)
+{
+	if (delta)
+	{
+		MSG_ReadByte();
+		if ((outgoing_sequence - incoming_sequence - 1) >= UPDATE_MASK)
+		{
+			return;
+		}
+	}
+
+	while (true)
+	{
+		unsigned int entnum, bits, morebits;
+
+		NetMsg_Parser_ParseEntityNum(&entnum, &bits, &morebits);
+
+		if (msg_badread)
+		{
+			// Something didn't parse right...
+			Sys_PrintError("NetMsg_Parser_ParsePacketEntities: msg_badread in packetentities.\n");
+			return;
+		}
+
+		if (!entnum)
+		{
+			break;
+		}
+
+		NetMsg_Parser_ParseEntityDelta(bits, morebits);
+	}
 }
 
 static void NetMsg_Parser_Parse_svc_packetentities(mvd_info_t *mvd)
@@ -1541,7 +1595,12 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			}
 			case svc_modellist :
 			{
-				NetMsg_Parser_Parse_svc_modellist();
+				NetMsg_Parser_Parse_svc_modellist(false);
+				break;
+			}
+			case svc_fte_modellistshort :
+			{
+				NetMsg_Parser_Parse_svc_modellist(true);
 				break;
 			}
 			case svc_soundlist :
@@ -1557,6 +1616,11 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			case svc_spawnbaseline :
 			{
 				NetMsg_Parser_Parse_svc_spawnbaseline();
+				break;
+			}
+			case svc_fte_spawnbaseline2 :
+			{
+				NetMsg_Parser_Parse_svc_fte_spawnbaseline2();
 				break;
 			}
 			case svc_updatefrags :
@@ -1672,6 +1736,11 @@ qbool NetMsg_Parser_StartParse(mvd_info_t *mvd)
 			case svc_spawnstatic :
 			{
 				NetMsg_Parser_Parse_svc_spawnstatic();
+				break;
+			}
+			case svc_fte_spawnstatic2 :
+			{
+				NetMsg_Parser_Parse_svc_fte_spawnstatic2();
 				break;
 			}
 			case svc_foundsecret :

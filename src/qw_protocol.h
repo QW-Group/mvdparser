@@ -89,7 +89,7 @@ extern char *print_strings[];		// Contains descriptions of the print levels.
 #define	svc_damage				19
 	
 #define	svc_spawnstatic			20
-//	svc_spawnbinary				21
+#define svc_fte_spawnstatic2	21
 #define	svc_spawnbaseline		22
 	
 #define	svc_temp_entity			23	// variable
@@ -138,6 +138,8 @@ extern char *print_strings[];		// Contains descriptions of the print levels.
 #define svc_serverinfo			52		// serverinfo
 #define svc_updatepl			53		// [byte] [byte]
 #define svc_nails2				54		
+#define svc_fte_modellistshort  60
+#define svc_fte_spawnbaseline2	66
 #define svc_qizmovoice			83
 
 //==============================================
@@ -221,14 +223,24 @@ extern char *print_strings[];		// Contains descriptions of the print levels.
 #define	U_MOREBITS	(1 << 15)
 
 // if MOREBITS is set, these additional flags are read in next
-#define	U_ANGLE1	(1 << 0)
-#define	U_ANGLE3	(1 << 1)
-#define	U_MODEL		(1 << 2)
-#define	U_COLORMAP	(1 << 3)
-#define	U_SKIN		(1 << 4)
-#define	U_EFFECTS	(1 << 5)
-#define	U_SOLID		(1 << 6)		// the entity should be solid for prediction
+#define	U_ANGLE1		(1 << 0)
+#define	U_ANGLE3		(1 << 1)
+#define	U_MODEL			(1 << 2)
+#define	U_COLORMAP		(1 << 3)
+#define	U_SKIN			(1 << 4)
+#define	U_EFFECTS		(1 << 5)
+#define	U_SOLID			(1 << 6)		// the entity should be solid for prediction
+#define	U_FTE_EVENMORE	(1 << 7)
 
+// if EVENMORE is set, these additional flags are read in next
+#define	U_FTE_TRANS			(1 << 1)
+#define	U_FTE_MODELDBL		(1 << 3)
+#define	U_FTE_ENTITYDBL		(1 << 5)
+#define	U_FTE_ENTITYDBL2	(1 << 6)
+#define	U_FTE_YETMORE		(1 << 7)
+
+// if YETMORE is set, these additional flags are read in next
+#define	U_FTE_COLOURMOD	(1 << 10)
 //==============================================
 
 // a sound with no channel is a local only sound
